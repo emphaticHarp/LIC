@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration error details:', error);
     console.error('Error stack:', error.stack);
     
