@@ -1,0 +1,20 @@
+{
+  "email": "amar123@gmail.com",
+  "password": "$2b$12$sscgb330hvS/zCShWlxUfeAwoGC2zn9geDt/rIMf0gg3DWikCby8.",
+  "name": "Amar User",
+  "role": "customer",
+  "profile": {
+    "firstName": "Amar",
+    "lastName": "User",
+    "memberSince": {
+      "$date": "2025-12-01T14:34:05.877Z"
+    }
+  },
+  "isActive": true,
+  "createdAt": {
+    "$date": "2025-12-01T14:34:05.878Z"
+  },
+  "updatedAt": {
+    "$date": "2025-12-01T14:34:05.878Z"
+  }
+}

@@ -155,7 +155,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Divider */}
+          {/* Register Link */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300"></div>
@@ -164,6 +164,14 @@ export default function LoginPage() {
               <span className="px-2 bg-white text-gray-600">New to LIC?</span>
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => router.push("/register")}
+            className="w-full py-2.5 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg transition-all duration-200"
+          >
+            Create New Account
+          </button>
 
           {/* Contact Support */}
           <p className="text-center text-sm text-gray-600">
