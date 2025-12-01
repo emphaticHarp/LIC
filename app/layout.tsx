@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ReduxProvider from "@/components/providers/ReduxProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "LIC Login - Life Insurance Corporation of India",
@@ -18,6 +19,7 @@ export default function RootLayout({
         <ReduxProvider>
           {children}
         </ReduxProvider>
+        <Analytics />
       </body>
     </html>
   );
