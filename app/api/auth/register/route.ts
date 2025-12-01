@@ -7,18 +7,25 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password, name, role = 'customer' } = await request.json();
 
+    console.log('Registration request received:', { email, name, role });
+
     if (!email || !password || !name) {
+      console.log('Missing required fields');
       return NextResponse.json(
         { error: 'Email, password, and name are required' },
         { status: 400 }
       );
     }
 
+    console.log('Attempting to connect to MongoDB...');
     await connectDB();
+    console.log('MongoDB connected successfully');
 
     // Check if user already exists
+    console.log('Checking if user exists:', email);
     const existingUser = await User.findOne({ email });
     if (existingUser) {
+      console.log('User already exists:', email);
       return NextResponse.json(
         { error: 'User already exists' },
         { status: 400 }
@@ -26,9 +33,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password
+    console.log('Hashing password...');
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create user
+    console.log('Creating user...');
     const user = new User({
       email,
       password: hashedPassword,
@@ -42,6 +51,7 @@ export async function POST(request: NextRequest) {
     });
 
     await user.save();
+    console.log('User created successfully:', email);
 
     // Return user data (excluding password)
     const userResponse = {
@@ -58,9 +68,14 @@ export async function POST(request: NextRequest) {
     );
 
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Registration error details:', error);
+    console.error('Error stack:', error.stack);
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error.message 
+      },
       { status: 500 }
     );
   }
