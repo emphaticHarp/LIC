@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,35 +16,30 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      console.log("Login successful!", user.email);
-      
-      // Redirect to dashboard with email as query parameter
-      router.push(`/dashboard?email=${encodeURIComponent(user.email || "")}`);
-    } catch (err: any) {
-      let errorMessage = "Failed to login. Please try again.";
-      
-      // Handle specific Firebase errors
-      if (err.code === "auth/user-not-found") {
-        errorMessage = "Email not found. Please check and try again.";
-      } else if (err.code === "auth/wrong-password") {
-        errorMessage = "Incorrect password. Please try again.";
-      } else if (err.code === "auth/invalid-credential") {
-        errorMessage = "Invalid email or password. Please check your credentials and try again.";
-      } else if (err.code === "auth/invalid-email") {
-        errorMessage = "Invalid email format.";
-      } else if (err.code === "auth/user-disabled") {
-        errorMessage = "This account has been disabled.";
-      } else if (err.code === "auth/too-many-requests") {
-        errorMessage = "Too many login attempts. Please try again later.";
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("Login successful!", data.user.email);
+        
+        // Store user in localStorage for session management
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Redirect to dashboard with email as query parameter
+        router.push(`/dashboard?email=${encodeURIComponent(data.user.email)}`);
       } else {
-        errorMessage = err.message;
+        alert(data.error || 'Failed to login. Please try again.');
       }
-      
-      console.error("Login error:", err);
-      alert(errorMessage);
+    } catch (err: any) {
+      console.error('Login error:', err);
+      alert('Network error. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }

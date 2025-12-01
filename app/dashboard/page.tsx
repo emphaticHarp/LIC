@@ -2,8 +2,6 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import Image from "next/image";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
@@ -66,7 +64,8 @@ function DashboardPageContent() {
     setIsLoading(true);
     
     try {
-      await signOut(auth);
+      // Clear user from localStorage
+      localStorage.removeItem('user');
       
       // Redirect to login page directly
       router.push("/");

@@ -2,8 +2,6 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import Image from "next/image";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -147,7 +145,8 @@ function PaymentsPageContent() {
     setIsLoading(true);
     
     try {
-      await signOut(auth);
+      // Clear user from localStorage
+      localStorage.removeItem('user');
       router.push("/");
     } catch (error) {
       console.error("Logout error:", error);

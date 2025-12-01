@@ -2,8 +2,6 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,6 +44,7 @@ function PoliciesPageContent() {
     customerName: "",
     premium: "",
     sumAssured: "",
+    status: "active",
     startDate: "",
     endDate: "",
     nextPremium: "",
@@ -160,7 +159,8 @@ function PoliciesPageContent() {
     setIsLoading(true);
     
     try {
-      await signOut(auth);
+      // Clear user from localStorage
+      localStorage.removeItem('user');
       router.push("/");
     } catch (error) {
       console.error("Logout error:", error);
@@ -266,63 +266,96 @@ function PoliciesPageContent() {
 
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const newPolicy = {
-      id: formData.policyId,
-      type: formData.type,
-      customerName: formData.customerName,
-      premium: formData.premium,
-      sumAssured: formData.sumAssured,
-      status: "active",
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      nextPremium: formData.nextPremium,
-      category: formData.category,
-      customerImage: formData.customerImage || "https://randomuser.me/api/portraits/lego/0.jpg"
-    };
+    try {
+      const policyData = {
+        policyId: formData.policyId,
+        type: formData.type,
+        customerName: formData.customerName,
+        premium: formData.premium,
+        sumAssured: formData.sumAssured,
+        status: "active",
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        nextPremium: formData.nextPremium,
+        category: formData.category,
+        customerEmail: email,
+        customerImage: formData.customerImage || "https://randomuser.me/api/portraits/lego/0.jpg"
+      };
 
-    setPolicies(prev => [newPolicy, ...prev]);
-    
-    // Reset form
-    setFormData({
-      policyId: "",
-      type: "",
-      customerName: "",
-      premium: "",
-      sumAssured: "",
-      startDate: "",
-      endDate: "",
-      nextPremium: "",
-      category: "",
-      customerImage: "",
-      // Customer Information
-      customerEmail: "",
-      customerPhone: "",
-      customerAadhaar: "",
-      customerPAN: "",
-      customerAddress: "",
-      customerDOB: "",
-      customerOccupation: "",
-      // Nominee Information
-      nomineeName: "",
-      nomineeRelation: "",
-      nomineePhone: "",
-      nomineeAge: "",
-      // Policy Details
-      premiumFrequency: "Yearly",
-      policyTerm: "",
-      paymentMode: "",
-      medicalRequired: "No",
-      existingPolicies: "0",
-      // Agent/Branch Information
-      agentCode: "",
-      branchCode: ""
-    });
-    
-    setIsAddDialogOpen(false);
-    setIsSubmitting(false);
+      const response = await fetch('/api/policies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(policyData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Convert date strings to Date objects for local state
+        const newPolicy = {
+          id: data.policy.policyId,
+          type: data.policy.type,
+          customerName: data.policy.customerName,
+          premium: data.policy.premium,
+          sumAssured: data.policy.sumAssured,
+          status: data.policy.status,
+          startDate: data.policy.startDate,
+          endDate: data.policy.endDate,
+          nextPremium: data.policy.nextPremium,
+          category: data.policy.category,
+          customerImage: data.policy.customerImage
+        };
+
+        setPolicies(prev => [newPolicy, ...prev]);
+        setIsAddDialogOpen(false);
+        
+        // Reset form
+        setFormData({
+          policyId: "",
+          type: "",
+          customerName: "",
+          premium: "",
+          sumAssured: "",
+          status: "active",
+          startDate: "",
+          endDate: "",
+          nextPremium: "",
+          category: "",
+          customerImage: "",
+          // Customer Information
+          customerEmail: "",
+          customerPhone: "",
+          customerAadhaar: "",
+          customerPAN: "",
+          customerAddress: "",
+          customerDOB: "",
+          customerOccupation: "",
+          // Nominee Information
+          nomineeName: "",
+          nomineeRelation: "",
+          nomineePhone: "",
+          nomineeAge: "",
+          // Policy Details
+          premiumFrequency: "Yearly",
+          policyTerm: "",
+          paymentMode: "",
+          medicalRequired: "No",
+          existingPolicies: "0",
+          // Agent/Branch Information
+          agentCode: "",
+          branchCode: ""
+        });
+      } else {
+        alert(data.error || 'Failed to create policy');
+      }
+    } catch (error) {
+      console.error('Create policy error:', error);
+      alert('Network error. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -332,6 +365,7 @@ function PoliciesPageContent() {
       customerName: "",
       premium: "",
       sumAssured: "",
+      status: "active",
       startDate: "",
       endDate: "",
       nextPremium: "",
@@ -371,6 +405,7 @@ function PoliciesPageContent() {
       customerName: policy.customerName,
       premium: policy.premium,
       sumAssured: policy.sumAssured,
+      status: policy.status || "active",
       startDate: policy.startDate,
       endDate: policy.endDate,
       nextPremium: policy.nextPremium,
@@ -450,6 +485,7 @@ function PoliciesPageContent() {
       customerName: "",
       premium: "",
       sumAssured: "",
+      status: "active",
       startDate: "",
       endDate: "",
       nextPremium: "",
@@ -491,6 +527,7 @@ function PoliciesPageContent() {
       customerName: "",
       premium: "",
       sumAssured: "",
+      status: "active",
       startDate: "",
       endDate: "",
       nextPremium: "",

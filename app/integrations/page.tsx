@@ -2,8 +2,6 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -190,7 +188,8 @@ function IntegrationsPageContent() {
     setIsLoading(true);
     
     try {
-      await signOut(auth);
+      // Clear user from localStorage
+      localStorage.removeItem('user');
       router.push("/");
     } catch (error) {
       console.error("Logout error:", error);

@@ -3,8 +3,6 @@
 // Navbar component for LIC application
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
@@ -40,7 +38,8 @@ export default function Navbar({
     setIsLoading(true);
     
     try {
-      await signOut(auth);
+      // Clear user from localStorage
+      localStorage.removeItem('user');
       router.push("/");
     } catch (error) {
       console.error("Logout error:", error);
