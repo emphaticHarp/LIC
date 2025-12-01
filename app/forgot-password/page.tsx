@@ -55,16 +55,16 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* LIC Logo Section */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <Image
             src="https://1000logos.net/wp-content/uploads/2021/08/LIC-Logo.jpg"
             alt="LIC Logo"
-            width={150}
-            height={150}
-            className="mx-auto mb-4 rounded-lg"
+            width={120}
+            height={120}
+            className="mx-auto mb-3 sm:mb-4 rounded-lg"
             priority
           />
-          <p className="text-gray-600">Life Insurance Corporation of India</p>
+          <p className="text-xs sm:text-sm text-gray-600">Life Insurance Corporation of India</p>
         </div>
 
         {/* Forgot Password Card */}
@@ -79,9 +79,9 @@ export default function ForgotPasswordPage() {
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <CardTitle>Forgot Password</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Forgot Password</CardTitle>
             </div>
-            <CardDescription>
+            <CardDescription className="text-sm">
               {!showOTP 
                 ? "Enter your phone number to receive a verification code"
                 : "Enter the 6-digit verification code sent to your phone"

@@ -113,27 +113,27 @@ function DashboardPageContent() {
       />
 
       {/* Dashboard Content with Sidebar */}
-      <div className="flex min-h-[calc(100vh-4rem)]">
+      <div className="flex flex-col md:flex-row min-h-[calc(100vh-4rem)]">
         {/* Main Content */}
-        <div className={`flex-1 transition-all duration-300 ${showProfileSidebar ? 'mr-80' : ''}`}>
-          <div className="p-6">
+        <div className={`flex-1 transition-all duration-300 ${showProfileSidebar ? 'md:mr-80' : ''}`}>
+          <div className="p-4 sm:p-6">
             {/* Dashboard Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="policies">Policies</TabsTrigger>
-                <TabsTrigger value="claims">Claims</TabsTrigger>
-                <TabsTrigger value="customers">Customers</TabsTrigger>
-                <TabsTrigger value="collections">Collections</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto p-1">
+                <TabsTrigger value="overview" className="text-xs sm:text-sm py-2 px-2">Overview</TabsTrigger>
+                <TabsTrigger value="policies" className="text-xs sm:text-sm py-2 px-2">Policies</TabsTrigger>
+                <TabsTrigger value="claims" className="text-xs sm:text-sm py-2 px-2">Claims</TabsTrigger>
+                <TabsTrigger value="customers" className="text-xs sm:text-sm py-2 px-2 hidden sm:flex">Customers</TabsTrigger>
+                <TabsTrigger value="collections" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">Collections</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
                 {/* Money Collected Section */}
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-2xl font-bold text-green-600">Money Collected</CardTitle>
-                      <Button variant="outline" size="sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <CardTitle className="text-xl sm:text-2xl font-bold text-green-600">Money Collected</CardTitle>
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto">
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
@@ -142,25 +142,25 @@ function DashboardPageContent() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="text-center p-4 bg-green-50 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">Today</p>
-                        <p className="text-2xl font-bold text-green-600">₹45,250</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                      <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1">Today</p>
+                        <p className="text-lg sm:text-2xl font-bold text-green-600">₹45,250</p>
                         <p className="text-xs text-gray-500 mt-1">+12% from yesterday</p>
                       </div>
-                      <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">This Week</p>
-                        <p className="text-2xl font-bold text-blue-600">₹2,85,000</p>
+                      <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1">This Week</p>
+                        <p className="text-lg sm:text-2xl font-bold text-blue-600">₹2,85,000</p>
                         <p className="text-xs text-gray-500 mt-1">+8% from last week</p>
                       </div>
-                      <div className="text-center p-4 bg-purple-50 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">This Month</p>
-                        <p className="text-2xl font-bold text-purple-600">₹12,50,000</p>
+                      <div className="text-center p-3 sm:p-4 bg-purple-50 rounded-lg">
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1">This Month</p>
+                        <p className="text-lg sm:text-2xl font-bold text-purple-600">₹12,50,000</p>
                         <p className="text-xs text-gray-500 mt-1">+15% from last month</p>
                       </div>
-                      <div className="text-center p-4 bg-orange-50 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">This Year</p>
-                        <p className="text-2xl font-bold text-orange-600">₹1,45,00,000</p>
+                      <div className="text-center p-3 sm:p-4 bg-orange-50 rounded-lg">
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1">This Year</p>
+                        <p className="text-lg sm:text-2xl font-bold text-orange-600">₹1,45,00,000</p>
                         <p className="text-xs text-gray-500 mt-1">+20% from last year</p>
                       </div>
                     </div>
@@ -168,16 +168,16 @@ function DashboardPageContent() {
                 </Card>
 
                 {/* Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-gray-600">Active Policies</p>
-                          <p className="text-2xl font-bold">1,245</p>
+                        <div className="flex-1">
+                          <p className="text-xs sm:text-sm text-gray-600">Active Policies</p>
+                          <p className="text-lg sm:text-2xl font-bold">1,245</p>
                         </div>
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                          <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </div>
@@ -186,14 +186,14 @@ function DashboardPageContent() {
                   </Card>
 
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-gray-600">Claims Processed</p>
-                          <p className="text-2xl font-bold">89</p>
+                        <div className="flex-1">
+                          <p className="text-xs sm:text-sm text-gray-600">Claims Processed</p>
+                          <p className="text-lg sm:text-2xl font-bold">89</p>
                         </div>
-                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </div>
@@ -202,14 +202,14 @@ function DashboardPageContent() {
                   </Card>
 
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-gray-600">New Customers</p>
-                          <p className="text-2xl font-bold">156</p>
+                        <div className="flex-1">
+                          <p className="text-xs sm:text-sm text-gray-600">New Customers</p>
+                          <p className="text-lg sm:text-2xl font-bold">156</p>
                         </div>
-                        <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                          <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                           </svg>
                         </div>
@@ -218,14 +218,14 @@ function DashboardPageContent() {
                   </Card>
 
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-gray-600">Commission</p>
-                          <p className="text-2xl font-bold">₹4.52L</p>
+                        <div className="flex-1">
+                          <p className="text-xs sm:text-sm text-gray-600">Commission</p>
+                          <p className="text-lg sm:text-2xl font-bold">₹4.52L</p>
                         </div>
-                        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                          <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                           </svg>
                         </div>
@@ -237,29 +237,29 @@ function DashboardPageContent() {
                 {/* Recent Activities */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Recent Activities</CardTitle>
-                    <CardDescription>Latest updates and notifications</CardDescription>
+                    <CardTitle className="text-lg sm:text-xl">Recent Activities</CardTitle>
+                    <CardDescription className="text-sm">Latest updates and notifications</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-4 p-3 bg-blue-50 rounded-lg">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">New policy sold</p>
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="flex items-center space-x-3 sm:space-x-4 p-3 bg-blue-50 rounded-lg">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">New policy sold</p>
                           <p className="text-xs text-gray-500">Term Life - ₹25,000 - Rajesh Kumar - 2 hours ago</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4 p-3 bg-green-50 rounded-lg">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <div className="flex items-center space-x-3 sm:space-x-4 p-3 bg-green-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
                         <div className="flex-1">
                           <p className="text-sm font-medium">Premium collected</p>
                           <p className="text-xs text-gray-500">₹25,000 from 5 customers - 3 hours ago</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4 p-3 bg-purple-50 rounded-lg">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">Claim approved</p>
+                      <div className="flex items-center space-x-3 sm:space-x-4 p-3 bg-purple-50 rounded-lg">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full flex-shrink-0"></div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">Claim approved</p>
                           <p className="text-xs text-gray-500">Health insurance claim for Priya Sharma - 5 hours ago</p>
                         </div>
                       </div>

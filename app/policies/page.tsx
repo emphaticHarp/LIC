@@ -568,60 +568,61 @@ function PoliciesPageContent() {
       />
 
       {/* Policies Content */}
-      <div className="flex min-h-[calc(100vh-4rem)]">
+      <div className="flex flex-col md:flex-row min-h-[calc(100vh-4rem)]">
         {/* Main Content */}
-        <div className={`flex-1 transition-all duration-300 ${showProfileSidebar ? 'mr-80' : ''}`}>
-          <div className="p-6">
+        <div className={`flex-1 transition-all duration-300 ${showProfileSidebar ? 'md:mr-80' : ''}`}>
+          <div className="p-4 sm:p-6">
             {/* Header */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Insurance Policies</h1>
-              <p className="text-gray-600">Manage and track all insurance policies</p>
+            <div className="mb-4 sm:mb-6">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Insurance Policies</h1>
+              <p className="text-sm sm:text-base text-gray-600">Manage and track all insurance policies</p>
             </div>
 
             {/* Filters and Search */}
-            <Card className="mb-6">
-              <CardContent className="p-4">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1">
+            <Card className="mb-4 sm:mb-6">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col gap-3 sm:gap-4">
+                  <div className="w-full">
                     <Input
                       placeholder="Search by policy ID, customer name, or type..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full"
+                      className="w-full text-sm"
                     />
                   </div>
-                  <Select value={filterType} onValueChange={setFilterType}>
-                    <SelectTrigger className="w-full md:w-48">
-                      <SelectValue placeholder="Filter by type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="life">Life Insurance</SelectItem>
-                      <SelectItem value="health">Health Insurance</SelectItem>
-                      <SelectItem value="vehicle">Vehicle Insurance</SelectItem>
-                      <SelectItem value="property">Property Insurance</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-full md:w-48">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="expired">Expired</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Add Policy
-                      </Button>
-                    </DialogTrigger>
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                    <Select value={filterType} onValueChange={setFilterType}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Filter by type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="life">Life Insurance</SelectItem>
+                        <SelectItem value="health">Health Insurance</SelectItem>
+                        <SelectItem value="vehicle">Vehicle Insurance</SelectItem>
+                        <SelectItem value="property">Property Insurance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="expired">Expired</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full sm:w-auto">
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Add Policy
+                        </Button>
+                      </DialogTrigger>
                     <DialogContent className="sm:max-w-[600px]">
                       <DialogHeader>
                         <DialogTitle>Add New Policy</DialogTitle>
@@ -1160,6 +1161,7 @@ function PoliciesPageContent() {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
+                  </div>
                 </div>
               </CardContent>
             </Card>

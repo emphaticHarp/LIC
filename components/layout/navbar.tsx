@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import Image from "next/image";
+import { Menu, X } from "lucide-react";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -33,6 +34,7 @@ export default function Navbar({
 }: NavbarProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -81,34 +83,34 @@ export default function Navbar({
   ];
 
   return (
-    <nav className="bg-white shadow-lg border-b border-blue-100">
+    <nav className="bg-white shadow-lg border-b border-blue-100 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <div className="flex items-center">
               <Image
                 src="https://1000logos.net/wp-content/uploads/2021/08/LIC-Logo.jpg"
                 alt="LIC Logo"
-                width={45}
-                height={45}
+                width={40}
+                height={40}
                 className="rounded-lg shadow-sm"
                 priority
               />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-xl font-bold text-blue-600 leading-tight">{email.split('@')[0]}</h1>
-              <p className="text-xs text-gray-500 leading-none">Life Insurance Corporation</p>
+              <h1 className="text-lg sm:text-xl font-bold text-blue-600 leading-tight truncate max-w-[120px] sm:max-w-none">{email.split('@')[0]}</h1>
+              <p className="text-xs text-gray-500 leading-none hidden sm:block">Life Insurance Corporation</p>
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-8">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-4 lg:space-x-8">
             {navItems.map((item) => (
               <a
                 key={item.name}
                 href={item.path === "#" ? "#" : email ? `/${item.path}?email=${encodeURIComponent(email)}` : `/${item.path}`}
-                className={`font-medium transition-colors ${
+                className={`font-medium transition-colors text-sm ${
                   item.active
                     ? "text-blue-600 border-b-2 border-blue-600 pb-1"
                     : "text-gray-700 hover:text-blue-600"
@@ -121,7 +123,7 @@ export default function Navbar({
             {/* More Dropdown */}
             <Menubar className="border-none bg-transparent shadow-none p-0 h-auto">
               <MenubarMenu>
-                <MenubarTrigger className={`font-medium transition-colors flex items-center space-x-1 ${
+                <MenubarTrigger className={`font-medium transition-colors flex items-center space-x-1 text-sm ${
                   dropdownItems.some(item => item.active) 
                     ? "text-blue-600 border-b-2 border-blue-600 pb-1" 
                     : "text-gray-700 hover:text-blue-600"
@@ -151,8 +153,8 @@ export default function Navbar({
             </Menubar>
           </div>
 
-          {/* Profile Section */}
-          <div className="flex items-center space-x-4">
+          {/* Profile Section - Desktop */}
+          <div className="hidden md:flex items-center space-x-4">
             {/* Notifications Dropdown */}
             <Menubar className="border-none bg-transparent shadow-none p-0 h-auto">
               <MenubarMenu>
@@ -251,10 +253,10 @@ export default function Navbar({
             <Menubar className="border-none bg-transparent shadow-none p-0 h-auto">
               <MenubarMenu>
                 <MenubarTrigger className="flex items-center space-x-3 text-gray-700 hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-gray-100">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold shadow-md">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold shadow-md">
                     {email.charAt(0).toUpperCase()}
                   </div>
-                  <div className="hidden md:block text-left">
+                  <div className="hidden lg:block text-left">
                     <p className="text-sm font-medium text-gray-900">
                       {email.split('@')[0]}
                     </p>
@@ -266,7 +268,7 @@ export default function Navbar({
                 </MenubarTrigger>
                 <MenubarContent align="end" className="w-48">
                   <div className="px-2 py-1.5 border-b border-gray-200">
-                    <p className="text-sm font-medium text-gray-900">{email}</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">{email}</p>
                     <p className="text-xs text-gray-500">Premium Customer</p>
                   </div>
                   <MenubarItem onClick={() => setShowProfileSidebar(true)}>
@@ -323,7 +325,111 @@ export default function Navbar({
               </MenubarMenu>
             </Menubar>
           </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center space-x-2">
+            {/* Mobile Notifications */}
+            <button className="relative p-2 text-gray-600 hover:text-blue-600 transition-colors rounded-lg hover:bg-gray-100">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Mobile Profile */}
+            <button className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold shadow-md">
+              {email.charAt(0).toUpperCase()}
+            </button>
+
+            {/* Mobile menu toggle */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 text-gray-600 hover:text-blue-600 transition-colors rounded-lg hover:bg-gray-100"
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              {/* Main Navigation Items */}
+              {navItems.map((item) => (
+                <a
+                  key={item.name}
+                  href={item.path === "#" ? "#" : email ? `/${item.path}?email=${encodeURIComponent(email)}` : `/${item.path}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                    item.active
+                      ? "text-blue-600 bg-blue-50"
+                      : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {item.name}
+                </a>
+              ))}
+              
+              {/* Dropdown Items */}
+              <div className="pt-2 border-t border-gray-200">
+                <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">More</p>
+                {dropdownItems.map((item) => (
+                  <a
+                    key={item.name}
+                    href={`/${item.path}?email=${encodeURIComponent(email)}`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                      item.active
+                        ? "text-blue-600 bg-blue-50"
+                        : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {item.name}
+                  </a>
+                ))}
+              </div>
+
+              {/* Mobile Profile Actions */}
+              <div className="pt-2 border-t border-gray-200">
+                <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Account</p>
+                <button
+                  onClick={() => {
+                    setShowProfileSidebar(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                >
+                  Profile
+                </button>
+                <a
+                  href={`/settings?email=${encodeURIComponent(email)}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                >
+                  Settings
+                </a>
+                <button className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50">
+                  Documents
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  {isLoading ? "Logging out..." : "Logout"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );
