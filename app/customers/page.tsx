@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
@@ -19,7 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 
-export default function CustomersPage() {
+function CustomersPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -1053,5 +1053,26 @@ export default function CustomersPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function CustomersPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-64 h-64 mx-auto mb-4">
+            <DotLottieReact
+              src="https://lottie.host/468d72b6-4073-4ce2-b957-f33f46e8eb67/uVKp5LGC97.lottie"
+              loop
+              autoplay
+            />
+          </div>
+          <p className="text-gray-600">Loading customers...</p>
+        </div>
+      </div>
+    }>
+      <CustomersPageContent />
+    </Suspense>
   );
 }

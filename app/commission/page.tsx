@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 
-export default function CommissionPage() {
+function CommissionPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -469,5 +469,26 @@ export default function CommissionPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function CommissionPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-64 h-64 mx-auto mb-4">
+            <DotLottieReact
+              src="https://lottie.host/468d72b6-4073-4ce2-b957-f33f46e8eb67/uVKp5LGC97.lottie"
+              loop
+              autoplay
+            />
+          </div>
+          <p className="text-gray-600">Loading commission data...</p>
+        </div>
+      </div>
+    }>
+      <CommissionPageContent />
+    </Suspense>
   );
 }

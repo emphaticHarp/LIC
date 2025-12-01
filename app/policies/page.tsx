@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -21,7 +21,7 @@ import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import CertificateGenerator from "@/components/certificate/certificate-generator";
 
-export default function PoliciesPage() {
+function PoliciesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -296,7 +296,29 @@ export default function PoliciesPage() {
       endDate: "",
       nextPremium: "",
       category: "",
-      customerImage: ""
+      customerImage: "",
+      // Customer Information
+      customerEmail: "",
+      customerPhone: "",
+      customerAadhaar: "",
+      customerPAN: "",
+      customerAddress: "",
+      customerDOB: "",
+      customerOccupation: "",
+      // Nominee Information
+      nomineeName: "",
+      nomineeRelation: "",
+      nomineePhone: "",
+      nomineeAge: "",
+      // Policy Details
+      premiumFrequency: "Yearly",
+      policyTerm: "",
+      paymentMode: "",
+      medicalRequired: "No",
+      existingPolicies: "0",
+      // Agent/Branch Information
+      agentCode: "",
+      branchCode: ""
     });
     
     setIsAddDialogOpen(false);
@@ -314,7 +336,29 @@ export default function PoliciesPage() {
       endDate: "",
       nextPremium: "",
       category: "",
-      customerImage: ""
+      customerImage: "",
+      // Customer Information
+      customerEmail: "",
+      customerPhone: "",
+      customerAadhaar: "",
+      customerPAN: "",
+      customerAddress: "",
+      customerDOB: "",
+      customerOccupation: "",
+      // Nominee Information
+      nomineeName: "",
+      nomineeRelation: "",
+      nomineePhone: "",
+      nomineeAge: "",
+      // Policy Details
+      premiumFrequency: "Yearly",
+      policyTerm: "",
+      paymentMode: "",
+      medicalRequired: "No",
+      existingPolicies: "0",
+      // Agent/Branch Information
+      agentCode: "",
+      branchCode: ""
     });
     setIsAddDialogOpen(false);
   };
@@ -331,7 +375,29 @@ export default function PoliciesPage() {
       endDate: policy.endDate,
       nextPremium: policy.nextPremium,
       category: policy.category,
-      customerImage: policy.customerImage || ""
+      customerImage: policy.customerImage || "",
+      // Customer Information - defaults
+      customerEmail: "",
+      customerPhone: "",
+      customerAadhaar: "",
+      customerPAN: "",
+      customerAddress: "",
+      customerDOB: "",
+      customerOccupation: "",
+      // Nominee Information - defaults
+      nomineeName: "",
+      nomineeRelation: "",
+      nomineePhone: "",
+      nomineeAge: "",
+      // Policy Details - defaults
+      premiumFrequency: "Yearly",
+      policyTerm: "",
+      paymentMode: "",
+      medicalRequired: "No",
+      existingPolicies: "0",
+      // Agent/Branch Information - defaults
+      agentCode: "",
+      branchCode: ""
     });
     setIsEditDialogOpen(true);
   };
@@ -388,7 +454,29 @@ export default function PoliciesPage() {
       endDate: "",
       nextPremium: "",
       category: "",
-      customerImage: ""
+      customerImage: "",
+      // Customer Information
+      customerEmail: "",
+      customerPhone: "",
+      customerAadhaar: "",
+      customerPAN: "",
+      customerAddress: "",
+      customerDOB: "",
+      customerOccupation: "",
+      // Nominee Information
+      nomineeName: "",
+      nomineeRelation: "",
+      nomineePhone: "",
+      nomineeAge: "",
+      // Policy Details
+      premiumFrequency: "Yearly",
+      policyTerm: "",
+      paymentMode: "",
+      medicalRequired: "No",
+      existingPolicies: "0",
+      // Agent/Branch Information
+      agentCode: "",
+      branchCode: ""
     });
     
     setIsEditDialogOpen(false);
@@ -407,7 +495,29 @@ export default function PoliciesPage() {
       endDate: "",
       nextPremium: "",
       category: "",
-      customerImage: ""
+      customerImage: "",
+      // Customer Information
+      customerEmail: "",
+      customerPhone: "",
+      customerAadhaar: "",
+      customerPAN: "",
+      customerAddress: "",
+      customerDOB: "",
+      customerOccupation: "",
+      // Nominee Information
+      nomineeName: "",
+      nomineeRelation: "",
+      nomineePhone: "",
+      nomineeAge: "",
+      // Policy Details
+      premiumFrequency: "Yearly",
+      policyTerm: "",
+      paymentMode: "",
+      medicalRequired: "No",
+      existingPolicies: "0",
+      // Agent/Branch Information
+      agentCode: "",
+      branchCode: ""
     });
     setIsEditDialogOpen(false);
     setSelectedPolicy(null);
@@ -1177,5 +1287,26 @@ export default function PoliciesPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function PoliciesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-64 h-64 mx-auto mb-4">
+            <DotLottieReact
+              src="https://lottie.host/468d72b6-4073-4ce2-b957-f33f46e8eb67/uVKp5LGC97.lottie"
+              loop
+              autoplay
+            />
+          </div>
+          <p className="text-gray-600">Loading policies...</p>
+        </div>
+      </div>
+    }>
+      <PoliciesPageContent />
+    </Suspense>
   );
 }

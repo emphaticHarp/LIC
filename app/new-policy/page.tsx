@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { jsPDF } from 'jspdf';
@@ -25,7 +25,7 @@ import {
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 
-export default function NewPolicyPage() {
+function NewPolicyPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -664,11 +664,11 @@ export default function NewPolicyPage() {
     
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(28);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("LIFE INSURANCE CORPORATION", pageWidth / 2, 25, { align: "center" });
     
     doc.setFontSize(16);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text("OF INDIA", pageWidth / 2, 40, { align: "center" });
     
     doc.setFontSize(10);
@@ -688,11 +688,11 @@ export default function NewPolicyPage() {
     
     doc.setTextColor(0, 51, 102);
     doc.setFontSize(18);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("POLICY APPLICATION DOCUMENT", pageWidth / 2, 95, { align: "center" });
     
     doc.setFontSize(11);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text("बीमा आवेदन पत्र", pageWidth / 2, 105, { align: "center" });
     
     // Application Details Box
@@ -704,12 +704,12 @@ export default function NewPolicyPage() {
     
     doc.setTextColor(0, 51, 102);
     doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("Application Details", margin + 10, currentY + 15);
     
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text(`Application ID: ${applicationId}`, margin + 10, currentY + 28);
     doc.text(`Policy Number: ${policyNumber}`, margin + 150, currentY + 28);
     doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`, margin + 10, currentY + 35);
@@ -724,7 +724,7 @@ export default function NewPolicyPage() {
     doc.rect(margin, currentY, contentWidth, 25, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("APPLICANT INFORMATION", margin + 10, currentY + 17);
     
     // Applicant Details Box
@@ -743,10 +743,10 @@ export default function NewPolicyPage() {
     const rightCol = margin + contentWidth / 2 + 10;
     
     // Left Column
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("Personal Details:", leftCol, yPos);
     yPos += 8;
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text(`Name: ${formData.applicantName || "Not provided"}`, leftCol, yPos);
     yPos += 6;
     doc.text(`Email: ${formData.applicantEmail || "Not provided"}`, leftCol, yPos);
@@ -761,10 +761,10 @@ export default function NewPolicyPage() {
     
     // Right Column
     yPos = currentY + 15;
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("Official Details:", rightCol, yPos);
     yPos += 8;
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text(`Aadhaar: ${formData.applicantAadhaar || "Not provided"}`, rightCol, yPos);
     yPos += 6;
     doc.text(`PAN: ${formData.applicantPAN || "Not provided"}`, rightCol, yPos);
@@ -775,10 +775,10 @@ export default function NewPolicyPage() {
     
     // Address
     yPos = currentY + 65;
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("Address:", leftCol, yPos);
     yPos += 6;
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     const address = `${formData.applicantAddress || "Not provided"}, ${formData.applicantCity || ""}, ${formData.applicantState || ""} - ${formData.applicantPincode || ""}`;
     // Wrap long address
     const lines = doc.splitTextToSize(address, contentWidth - 30);
@@ -799,7 +799,7 @@ export default function NewPolicyPage() {
     doc.rect(margin, currentY, contentWidth, 25, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("POLICY DETAILS", margin + 10, currentY + 17);
     
     // Policy Details Box
@@ -814,10 +814,10 @@ export default function NewPolicyPage() {
     yPos = currentY + 15;
     
     // Two-column layout for policy details
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("Policy Information:", leftCol, yPos);
     yPos += 8;
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text(`Policy Type: ${formData.policyType || "Not selected"}`, leftCol, yPos);
     yPos += 6;
     doc.text(`Sum Assured: ₹${formData.sumAssured || "0"}`, leftCol, yPos);
@@ -828,10 +828,10 @@ export default function NewPolicyPage() {
     
     // Premium Details
     yPos = currentY + 15;
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("Premium Details:", rightCol, yPos);
     yPos += 8;
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text(`Base Premium: ₹${premiumCalculation.basePremium.toLocaleString()}`, rightCol, yPos);
     yPos += 6;
     doc.text(`GST (18%): ₹${premiumCalculation.gstAmount.toLocaleString()}`, rightCol, yPos);
@@ -849,7 +849,7 @@ export default function NewPolicyPage() {
     
     doc.setTextColor(0, 51, 102);
     doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text(`Total Annual Premium: ₹${premiumCalculation.yearlyPremium.toLocaleString()}`, margin + 10, currentY + 17);
     
     currentY += 35;
@@ -862,7 +862,7 @@ export default function NewPolicyPage() {
     doc.rect(margin, currentY, contentWidth, 25, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("NOMINEE INFORMATION", margin + 10, currentY + 17);
     
     // Nominee Details Box
@@ -876,10 +876,10 @@ export default function NewPolicyPage() {
     doc.setFontSize(11);
     yPos = currentY + 15;
     
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("Nominee Details:", leftCol, yPos);
     yPos += 8;
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text(`Name: ${formData.nomineeName || "Not provided"}`, leftCol, yPos);
     yPos += 6;
     doc.text(`Relationship: ${formData.nomineeRelation || "Not provided"}`, leftCol, yPos);
@@ -897,7 +897,7 @@ export default function NewPolicyPage() {
     doc.rect(0, 0, pageWidth, 40, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("MEDICAL & DECLARATION", pageWidth / 2, 25, { align: "center" });
     
     currentY = 55;
@@ -908,7 +908,7 @@ export default function NewPolicyPage() {
     doc.rect(margin, currentY, contentWidth, 25, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("MEDICAL INFORMATION", margin + 10, currentY + 17);
     
     // Medical Details Box
@@ -922,10 +922,10 @@ export default function NewPolicyPage() {
     doc.setFontSize(11);
     yPos = currentY + 15;
     
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("Health Details:", leftCol, yPos);
     yPos += 8;
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text(`Height: ${formData.height || "Not provided"} cm`, leftCol, yPos);
     yPos += 6;
     doc.text(`Weight: ${formData.weight || "Not provided"} kg`, leftCol, yPos);
@@ -933,10 +933,10 @@ export default function NewPolicyPage() {
     doc.text(`Blood Group: ${formData.bloodGroup || "Not provided"}`, leftCol, yPos);
     
     yPos = currentY + 15;
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("Medical History:", rightCol, yPos);
     yPos += 8;
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     const medicalHistory = formData.medicalHistory || "None";
     const medicalLines = doc.splitTextToSize(medicalHistory, contentWidth / 2 - 20);
     medicalLines.forEach((line: string) => {
@@ -952,7 +952,7 @@ export default function NewPolicyPage() {
     doc.rect(margin, currentY, contentWidth, 25, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("DECLARATION & TERMS", margin + 10, currentY + 17);
     
     // Declaration Box
@@ -991,7 +991,7 @@ export default function NewPolicyPage() {
     doc.rect(margin, currentY, contentWidth, 25, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("AUTHORIZED SIGNATURES", margin + 10, currentY + 17);
     
     // Signature Boxes
@@ -1002,9 +1002,9 @@ export default function NewPolicyPage() {
     doc.rect(margin, currentY, contentWidth / 2 - 10, 60);
     doc.setTextColor(0, 51, 102);
     doc.setFontSize(10);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("Applicant Signature", margin + 5, currentY + 10);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text(`${formData.applicantName || "Applicant Name"}`, margin + 5, currentY + 20);
     doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`, margin + 5, currentY + 30);
     
@@ -1012,9 +1012,9 @@ export default function NewPolicyPage() {
     doc.rect(margin + contentWidth / 2 + 10, currentY, contentWidth / 2 - 10, 60);
     doc.setTextColor(0, 51, 102);
     doc.setFontSize(10);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("Officer Signature", margin + contentWidth / 2 + 15, currentY + 10);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text("Rajesh Kumar", margin + contentWidth / 2 + 15, currentY + 20);
     doc.text("Branch Manager", margin + contentWidth / 2 + 15, currentY + 25);
     doc.text("LIC Mumbai Main", margin + contentWidth / 2 + 15, currentY + 30);
@@ -1038,7 +1038,7 @@ export default function NewPolicyPage() {
     doc.circle(pageWidth - 50, currentY + 20, 25);
     doc.setTextColor(200, 0, 0);
     doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text("OFFICIAL", pageWidth - 65, currentY + 20);
     doc.text("SEAL", pageWidth - 58, currentY + 28);
     
@@ -1052,7 +1052,8 @@ export default function NewPolicyPage() {
     doc.text("LIC Customer Care: 1800-425-0001 | www.licindia.com | support@licindia.com", pageWidth / 2, pageHeight - 10, { align: "center" });
     
     // Watermark on both pages
-    for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) {
+    const totalPages = doc.internal.pages.length - 1; // pages array includes a dummy page at index 0
+    for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(60);
       doc.setTextColor(230, 230, 230);
@@ -1725,5 +1726,26 @@ export default function NewPolicyPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function NewPolicyPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-64 h-64 mx-auto mb-4">
+            <DotLottieReact
+              src="https://lottie.host/468d72b6-4073-4ce2-b957-f33f46e8eb67/uVKp5LGC97.lottie"
+              loop
+              autoplay
+            />
+          </div>
+          <p className="text-gray-600">Loading policy form...</p>
+        </div>
+      </div>
+    }>
+      <NewPolicyPageContent />
+    </Suspense>
   );
 }
