@@ -98,7 +98,7 @@ export async function PUT(request: NextRequest) {
       { status: 200 }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating profile:', error);
     console.error('Error stack:', error.stack);
     return NextResponse.json(
