@@ -133,9 +133,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'create_template') {
-      const { name, type: templateType, subject, body, variables: vars } = body;
+      const { name, type: templateType, subject, body: messageBody, variables: vars } = body;
 
-      if (!name || !templateType || !body) {
+      if (!name || !templateType || !messageBody) {
         return NextResponse.json(
           { success: false, error: 'Missing required fields' },
           { status: 400 }
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
         name,
         type: templateType,
         subject,
-        body,
+        body: messageBody,
         variables: vars || [],
       });
 
