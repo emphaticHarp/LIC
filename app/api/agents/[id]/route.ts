@@ -5,12 +5,12 @@ import bcryptjs from "bcryptjs";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
 
-    const { id } = params;
+    const { id } = await params;
     const { name, password, role, isActive } = await request.json();
 
     // Find agent
@@ -58,12 +58,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
 
-    const { id } = params;
+    const { id } = await params;
 
     const agent = await User.findByIdAndDelete(id);
     if (!agent) {
