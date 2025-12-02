@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       updatedAt: user.updatedAt
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching user:', error);
     console.error('Error stack:', error.stack);
     return NextResponse.json(
