@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
+import LoansBankingSection from "./loans-banking";
 
 function CustomersPageContent() {
   const router = useRouter();
@@ -816,6 +817,17 @@ function CustomersPageContent() {
                     </tbody>
                   </table>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Loans & Banking Section */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>💰 Loans & Banking Services</CardTitle>
+                <CardDescription>Manage customer loans and banking products</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LoansBankingSection />
               </CardContent>
             </Card>
 
