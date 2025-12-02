@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import LoansBankingSection from "./loans-banking";
+import { CustomerManagementComponent } from "@/components/features/customer-management";
 
 function CustomersPageContent() {
   const router = useRouter();
@@ -27,6 +28,7 @@ function CustomersPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isClearingNotifications, setIsClearingNotifications] = useState(false);
   const [showProfileSidebar, setShowProfileSidebar] = useState(false);
+  const [activeTab, setActiveTab] = useState("existing");
   const [notifications, setNotifications] = useState([
     { id: 1, title: "New Customer Added", message: "Rahul Verma added as new customer", read: false, time: "2 hours ago" },
     { id: 2, title: "Policy Renewal Due", message: "Priya Sharma's policy renewal due in 15 days", read: false, time: "1 day ago" },

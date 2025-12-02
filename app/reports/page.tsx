@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ReportsAnalyticsComponent } from "@/components/features/reports-analytics";
 
 function ReportsPageContent() {
   const router = useRouter();
@@ -15,6 +17,7 @@ function ReportsPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isClearingNotifications, setIsClearingNotifications] = useState(false);
   const [showProfileSidebar, setShowProfileSidebar] = useState(false);
+  const [activeTab, setActiveTab] = useState("existing");
   const [notifications, setNotifications] = useState([
     { id: 1, title: "Report Generated", message: "Monthly sales report is ready for download", read: false, time: "1 hour ago" },
     { id: 2, title: "Data Updated", message: "Customer data has been successfully updated", read: false, time: "3 hours ago" },

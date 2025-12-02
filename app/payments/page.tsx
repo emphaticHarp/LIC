@@ -19,6 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import CertificateGenerator from "@/components/certificate/certificate-generator";
+import { PaymentsManagementComponent } from "@/components/features/payments-management";
 import jsPDF from 'jspdf';
 // @ts-ignore - QRCode types not available
 import QRCode from 'qrcode';

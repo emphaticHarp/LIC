@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AgentToolsComponent } from "@/components/features/agent-tools";
 
 interface Agent {
   _id?: string;
@@ -16,6 +18,7 @@ interface Agent {
 
 export default function AgentManagementPage() {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState("existing");
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);

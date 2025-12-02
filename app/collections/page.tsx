@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
+import { CollectionsTrackingComponent } from "@/components/features/collections-tracking";
 
 function CollectionsPageContent() {
   const router = useRouter();

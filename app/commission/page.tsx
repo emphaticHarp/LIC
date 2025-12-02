@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
+import { CommissionTrackingComponent } from "@/components/features/commission-tracking";
 
 function CommissionPageContent() {
   const router = useRouter();

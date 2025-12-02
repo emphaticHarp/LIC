@@ -97,7 +97,7 @@ export default function LoansBankingSection() {
                       </div>
                       <div className="flex justify-between">
                         <span>Max Amount:</span>
-                        <span className="font-semibold">₹{loan.maxAmount.toLocaleString()}</span>
+                        <span className="font-semibold">₹{loan.maxAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
                       </div>
                       <Button 
                         className="w-full mt-4" 
@@ -136,7 +136,7 @@ export default function LoansBankingSection() {
                       max={selectedLoanType?.maxAmount}
                       placeholder="Enter amount"
                     />
-                    <p className="text-xs text-gray-500">Max: ₹{selectedLoanType?.maxAmount.toLocaleString()}</p>
+                    <p className="text-xs text-gray-500">Max: ₹{selectedLoanType?.maxAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</p>
                   </div>
 
                   <div className="space-y-2">
@@ -187,7 +187,7 @@ export default function LoansBankingSection() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between p-2 bg-gray-50 rounded">
                       <span>Principal Amount:</span>
-                      <span className="font-semibold">₹{parseFloat(loanAmount).toLocaleString()}</span>
+                      <span className="font-semibold">₹{parseFloat(loanAmount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
                     </div>
                     <div className="flex justify-between p-2 bg-gray-50 rounded">
                       <span>Total Interest Payable:</span>

@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import { PieChart } from "@/components/ui/pie-chart";
+import { ClaimsManagementComponent } from "@/components/features/claims-management";
 
 function ClaimsPageContent() {
   const router = useRouter();
