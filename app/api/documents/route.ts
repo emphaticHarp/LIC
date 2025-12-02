@@ -15,10 +15,10 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action') || 'list';
-    const entityType = searchParams.get('entityType');
-    const entityId = searchParams.get('entityId');
-    const documentType = searchParams.get('documentType');
-    const documentId = searchParams.get('documentId');
+    const entityType = searchParams.get('entityType') || undefined;
+    const entityId = searchParams.get('entityId') || undefined;
+    const documentType = searchParams.get('documentType') || undefined;
+    const documentId = searchParams.get('documentId') || undefined;
 
     if (action === 'list') {
       if (!entityType || !entityId) {
