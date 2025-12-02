@@ -51,6 +51,7 @@ function AgentsPageContent() {
   const [agentFormData, setAgentFormData] = useState({
     name: "",
     email: "",
+    password: "",
     phone: "",
     address: "",
     dateOfBirth: "",
@@ -134,6 +135,26 @@ function AgentsPageContent() {
   const handleCreateAgent = async () => {
     setIsCreatingAgent(true);
     try {
+      // First, save agent credentials to MongoDB via API
+      const mongoResponse = await fetch("/api/agents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: agentFormData.email,
+          password: agentFormData.password,
+          name: agentFormData.name,
+          role: agentFormData.role.toLowerCase(),
+          isActive: true,
+        }),
+      });
+
+      if (!mongoResponse.ok) {
+        const error = await mongoResponse.json();
+        alert(error.error || "Failed to save agent credentials");
+        setIsCreatingAgent(false);
+        return;
+      }
+
       const agentData = {
         ...agentFormData,
         joiningDate: new Date().toISOString(),
@@ -170,10 +191,12 @@ function AgentsPageContent() {
       };
       
       await dispatch(createAgent(agentData)).unwrap();
+      alert("Agent created successfully with credentials saved!");
       setShowCreateDialog(false);
       setAgentFormData({
         name: "",
         email: "",
+        password: "",
         phone: "",
         address: "",
         dateOfBirth: "",
@@ -188,6 +211,7 @@ function AgentsPageContent() {
       });
     } catch (error) {
       console.error("Failed to create agent:", error);
+      alert("Failed to create agent. Please try again.");
     } finally {
       setIsCreatingAgent(false);
     }
@@ -816,6 +840,16 @@ function AgentsPageContent() {
                   value={agentFormData.email}
                   onChange={(e) => setAgentFormData(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="Enter email address"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={agentFormData.password}
+                  onChange={(e) => setAgentFormData(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="Enter password"
                 />
               </div>
               <div className="space-y-2">
