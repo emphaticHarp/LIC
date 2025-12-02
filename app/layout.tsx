@@ -4,8 +4,13 @@ import ReduxProvider from "@/components/providers/ReduxProvider";
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
-  title: "LIC Login - Life Insurance Corporation of India",
-  description: "Secure login portal for LIC account holders",
+  title: "LIC - Life Insurance Corporation of India",
+  description: "Secure portal for LIC account holders and agents",
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
