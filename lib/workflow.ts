@@ -116,7 +116,7 @@ async function executeWorkflowActions(
       results.push(actionResult);
 
       if (!actionResult.success) {
-        return { success: false, error: actionResult.error, results };
+        return { success: false, error: (actionResult as any).error || 'Action failed', results };
       }
     }
 
