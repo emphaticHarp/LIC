@@ -153,7 +153,7 @@ function CustomersPageContent() {
     const matchesSearch = customer.name.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
                          customer.phone.includes(customerSearchTerm) ||
                          customer.email.toLowerCase().includes(customerSearchTerm) ||
-                         customer.policyIds.some(id => id.toLowerCase().includes(customerSearchTerm.toLowerCase()));
+                         (customer.policyIds && Array.isArray(customer.policyIds) && customer.policyIds.some((id: string) => String(id).toLowerCase().includes(customerSearchTerm.toLowerCase())));
     
     const matchesStatus = customerFilterStatus === "all" || customer.status === customerFilterStatus;
     const matchesType = customerFilterType === "all" || customer.policyType === customerFilterType;
