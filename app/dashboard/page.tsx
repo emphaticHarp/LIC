@@ -24,23 +24,184 @@ function DashboardPageContent() {
   const [isClearingNotifications, setIsClearingNotifications] = useState(false);
   const [showProfileSidebar, setShowProfileSidebar] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: "Premium Due", message: "Your policy premium is due on Dec 15, 2024", read: false, time: "2 hours ago" },
-    { id: 2, title: "Policy Renewed", message: "Your policy #LIC-123456789 has been renewed", read: false, time: "1 day ago" },
-    { id: 3, title: "Document Uploaded", message: "KYC documents have been successfully uploaded", read: true, time: "3 days ago" },
-    { id: 4, title: "Claim Update", message: "Your claim #CLM-987654 has been processed", read: true, time: "1 week ago" }
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [news, setNews] = useState<any[]>([]);
+  const [isNewsLoading, setIsNewsLoading] = useState(true);
+  const [newsError, setNewsError] = useState<string | null>(null);
 
   useEffect(() => {
-    const emailParam = searchParams.get("email");
-    if (emailParam) {
-      setEmail(decodeURIComponent(emailParam));
-    } else {
-      // Fallback for when email is not in URL params
-      setEmail("user@example.com");
+    // Get email from localStorage and fetch MongoDB data
+    const user = localStorage.getItem('user');
+    let userEmail = "user@example.com";
+
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        userEmail = userData.email || "user@example.com";
+      } catch (error) {
+        // keep default fallback email
+      }
     }
-    setIsLoading(false); // Set loading to false after email is set
-  }, [searchParams]);
+
+    setEmail(userEmail);
+
+    // Fetch data from MongoDB APIs and News API
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch customers
+        const customersRes = await fetch('/api/customers?limit=50');
+        const customersData = await customersRes.json();
+
+        // Fetch claims
+        const claimsRes = await fetch('/api/claims?limit=5');
+        const claimsData = await claimsRes.json();
+
+        // Fetch payments
+        const paymentsRes = await fetch('/api/payments?limit=5');
+        const paymentsData = await paymentsRes.json();
+
+        // Fetch all policies from MongoDB
+        const policiesRes = await fetch(`/api/policies`);
+        const policiesJson = await policiesRes.json();
+        const policiesData = Array.isArray(policiesJson.policies) ? policiesJson.policies : [];
+
+        // Compute policy metrics
+        const totalPolicies = policiesData.length;
+        const activePolicies = policiesData.filter((p: any) => p.status === "active").length;
+        const pendingPolicies = policiesData.filter((p: any) => p.status === "pending").length;
+        const expiredPolicies = policiesData.filter((p: any) => p.status === "expired").length;
+
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        const policiesThisMonth = policiesData.filter((p: any) => {
+          const created = p.createdAt ? new Date(p.createdAt) : null;
+          return created && created.getMonth() === currentMonth && created.getFullYear() === currentYear;
+        }).length;
+
+        const renewalsDue = policiesData.filter((p: any) => {
+          if (!p.nextPremium) return false;
+          const next = new Date(p.nextPremium);
+          if (Number.isNaN(next.getTime())) return false;
+          const diffDays = (next.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+          return diffDays >= 0 && diffDays <= 30 && p.status === "active";
+        }).length;
+
+        const totalPremiumAmount = policiesData.reduce((sum: number, p: any) => {
+          if (!p.premium) return sum;
+          const numeric = parseInt(String(p.premium).replace(/[^\d]/g, ""), 10);
+          return sum + (Number.isNaN(numeric) ? 0 : numeric);
+        }, 0);
+
+        const recentPolicies = policiesData.slice(0, 5);
+
+        // Compute customer metrics
+        const customersList = customersData.data || [];
+        const totalCustomers = customersList.length;
+        const activeCustomers = customersList.filter((c: any) => c.status === "active").length;
+
+        const customersThisMonth = customersList.filter((c: any) => {
+          const created = c.createdAt ? new Date(c.createdAt) : null;
+          return created && created.getMonth() === currentMonth && created.getFullYear() === currentYear;
+        }).length;
+
+        const atRiskCustomers = customersList.filter((c: any) => c.kycStatus === "pending" || c.status === "suspended").length;
+
+        const recentCustomers = customersList.slice(0, 5);
+
+        setDashboardData({
+          customers: {
+            list: recentCustomers,
+            counts: {
+              total: totalCustomers,
+              active: activeCustomers,
+              thisMonth: customersThisMonth,
+              atRisk: atRiskCustomers,
+            },
+          },
+          claims: claimsData.data || [],
+          payments: paymentsData.data || [],
+          policies: {
+            list: recentPolicies,
+            counts: {
+              total: totalPolicies,
+              active: activePolicies,
+              pending: pendingPolicies,
+              expired: expiredPolicies,
+              thisMonth: policiesThisMonth,
+              renewalsDue,
+              totalPremiumAmount,
+            },
+          },
+        });
+
+        // Fetch news (LIC / Indian economy)
+        try {
+          const newsRes = await fetch('/api/news');
+          const newsJson = await newsRes.json();
+          if (newsRes.ok && newsJson.success) {
+            setNews(newsJson.articles || []);
+            setNewsError(null);
+          } else {
+            setNews([]);
+            setNewsError(newsJson.error || 'Failed to load news');
+          }
+        } catch (err) {
+          console.error('Error fetching news:', err);
+          setNews([]);
+          setNewsError('Network error while loading news');
+        } finally {
+          setIsNewsLoading(false);
+        }
+
+        // Generate notifications from MongoDB data
+        const notifs = [];
+        if (customersData.data?.length > 0) {
+          notifs.push({
+            id: 1,
+            title: "New Customers",
+            message: `${customersData.data.length} new customers in MongoDB`,
+            read: false,
+            time: "Just now"
+          });
+        }
+        if (claimsData.data?.length > 0) {
+          notifs.push({
+            id: 2,
+            title: "Claims Pending",
+            message: `${claimsData.data.length} claims awaiting processing`,
+            read: false,
+            time: "Just now"
+          });
+        }
+        if (paymentsData.data?.length > 0) {
+          notifs.push({
+            id: 3,
+            title: "Recent Payments",
+            message: `${paymentsData.data.length} payments recorded in MongoDB`,
+            read: false,
+            time: "Just now"
+          });
+        }
+        setNotifications(notifs);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        // Fallback to default notifications
+        setNotifications([
+          { id: 1, title: "Dashboard", message: "Connected to MongoDB", read: false, time: "Now" }
+        ]);
+      } finally {
+        setIsLoading(false);
+        if (isNewsLoading) {
+          setIsNewsLoading(false);
+        }
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   // Show loading state while email is being set
   if (isLoading) {
@@ -118,12 +279,13 @@ function DashboardPageContent() {
           <div className="p-4 sm:p-6">
             {/* Dashboard Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto p-1">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto p-1">
                 <TabsTrigger value="overview" className="text-xs sm:text-sm py-2 px-2">Overview</TabsTrigger>
                 <TabsTrigger value="policies" className="text-xs sm:text-sm py-2 px-2">Policies</TabsTrigger>
                 <TabsTrigger value="claims" className="text-xs sm:text-sm py-2 px-2">Claims</TabsTrigger>
                 <TabsTrigger value="customers" className="text-xs sm:text-sm py-2 px-2 hidden sm:flex">Customers</TabsTrigger>
                 <TabsTrigger value="collections" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">Collections</TabsTrigger>
+                <TabsTrigger value="news" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">News</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
@@ -166,6 +328,118 @@ function DashboardPageContent() {
                   </CardContent>
                 </Card>
 
+                {/* Business Health Snapshot */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <CardTitle className="text-lg sm:text-xl">Business Health</CardTitle>
+                        <CardDescription className="text-sm">
+                          Overall performance snapshot across key LIC metrics
+                        </CardDescription>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="border-green-500 text-green-700 bg-green-50">
+                          Healthy Portfolio
+                        </Badge>
+                        <Badge variant="outline" className="border-blue-500 text-blue-700 bg-blue-50">
+                          Growing Pipeline
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      {/* Portfolio Mix Chart */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-gray-700">Portfolio Mix</p>
+                          <span className="text-xs text-gray-500">Life / Health / Other</span>
+                        </div>
+                        <div className="h-44 sm:h-52 rounded-lg border border-dashed border-gray-200 flex items-center justify-center">
+                          {/* Placeholder for shadcn pie chart component */}
+                          <p className="text-xs sm:text-sm text-gray-500 text-center px-4">
+                            Connect the `pie-chart` component here to visualize premium distribution by product type.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Risk & Lapse Indicators */}
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium text-gray-700">Risk & Lapse Indicators</p>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs sm:text-sm text-gray-600">Policies at Risk</p>
+                              <p className="text-xs text-gray-500">Premium overdue & high-claim ratio</p>
+                            </div>
+                            <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
+                              6.2%
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs sm:text-sm text-gray-600">Expected Lapse Rate</p>
+                              <p className="text-xs text-gray-500">Next 30 days projection</p>
+                            </div>
+                            <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
+                              3.1%
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs sm:text-sm text-gray-600">Renewal Conversion</p>
+                              <p className="text-xs text-gray-500">Recovered at-risk policies</p>
+                            </div>
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                              91.4%
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Agent Leaderboard Snapshot */}
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium text-gray-700">Top Performing Agents</p>
+                        <div className="space-y-2">
+                          {[
+                            { name: "Rajesh Kumar", branch: "Mumbai Main", amount: "₹2.3L", tag: "Champion" },
+                            { name: "Priya Sharma", branch: "Delhi Central", amount: "₹1.9L", tag: "Rising Star" },
+                            { name: "Amit Singh", branch: "Bengaluru South", amount: "₹1.6L", tag: "Consistent" },
+                          ].map((agent) => (
+                            <div
+                              key={agent.name}
+                              className="flex items-center justify-between p-2.5 rounded-lg border bg-white/60"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-700">
+                                  {agent.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .slice(0, 2)}
+                                </div>
+                                <div>
+                                  <p className="text-xs sm:text-sm font-medium text-gray-800">
+                                    {agent.name}
+                                  </p>
+                                  <p className="text-[11px] text-gray-500">{agent.branch}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs sm:text-sm font-semibold text-green-600">
+                                  {agent.amount}
+                                </p>
+                                <p className="text-[11px] text-gray-500">{agent.tag}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Quick Stats */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
@@ -173,7 +447,9 @@ function DashboardPageContent() {
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <p className="text-xs sm:text-sm text-gray-600">Active Policies</p>
-                          <p className="text-lg sm:text-2xl font-bold">1,245</p>
+                          <p className="text-lg sm:text-2xl font-bold">
+                            {dashboardData?.policies?.counts?.active ?? 0}
+                          </p>
                         </div>
                         <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                           <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,7 +481,9 @@ function DashboardPageContent() {
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <p className="text-xs sm:text-sm text-gray-600">New Customers</p>
-                          <p className="text-lg sm:text-2xl font-bold">156</p>
+                          <p className="text-lg sm:text-2xl font-bold">
+                            {dashboardData?.policies?.counts?.thisMonth ?? 0}
+                          </p>
                         </div>
                         <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
                           <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -271,7 +549,7 @@ function DashboardPageContent() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Policy Management</CardTitle>
-                    <CardDescription>Manage insurance policies</CardDescription>
+                    <CardDescription>Overview of all insurance policies in the system</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -282,9 +560,11 @@ function DashboardPageContent() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                           </div>
-                          <h3 className="font-medium">Active Policies</h3>
-                          <p className="text-2xl font-bold text-blue-600">1,245</p>
-                          <p className="text-sm text-gray-600 mt-1">Total active</p>
+                          <h3 className="font-medium">Total Policies</h3>
+                          <p className="text-2xl font-bold text-blue-600">
+                            {dashboardData?.policies?.counts?.total ?? 0}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">Stored in MongoDB</p>
                         </CardContent>
                       </Card>
 
@@ -296,8 +576,10 @@ function DashboardPageContent() {
                             </svg>
                           </div>
                           <h3 className="font-medium">New This Month</h3>
-                          <p className="text-2xl font-bold text-green-600">45</p>
-                          <p className="text-sm text-gray-600 mt-1">+15% growth</p>
+                          <p className="text-2xl font-bold text-green-600">
+                            {dashboardData?.policies?.counts?.thisMonth ?? 0}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">Created this month</p>
                         </CardContent>
                       </Card>
 
@@ -309,8 +591,10 @@ function DashboardPageContent() {
                             </svg>
                           </div>
                           <h3 className="font-medium">Renewals Due</h3>
-                          <p className="text-2xl font-bold text-orange-600">89</p>
-                          <p className="text-sm text-gray-600 mt-1">This month</p>
+                          <p className="text-2xl font-bold text-orange-600">
+                            {dashboardData?.policies?.counts?.renewalsDue ?? 0}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">Next 30 days</p>
                         </CardContent>
                       </Card>
 
@@ -322,8 +606,13 @@ function DashboardPageContent() {
                             </svg>
                           </div>
                           <h3 className="font-medium">Total Premium</h3>
-                          <p className="text-2xl font-bold text-purple-600">₹45.2L</p>
-                          <p className="text-sm text-gray-600 mt-1">Monthly</p>
+                          <p className="text-2xl font-bold text-purple-600">
+                            ₹
+                            {dashboardData?.policies?.counts?.totalPremiumAmount
+                              ? dashboardData.policies.counts.totalPremiumAmount.toLocaleString("en-IN")
+                              : "0"}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">Sum of policy premiums</p>
                         </CardContent>
                       </Card>
                     </div>
@@ -338,59 +627,42 @@ function DashboardPageContent() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                      {dashboardData?.policies?.list?.length ? (
+                        dashboardData.policies.list.map((policy: any) => (
+                          <div
+                            key={policy._id || policy.policyId}
+                            className="flex items-center justify-between p-4 border rounded-lg"
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
+                              <div>
+                                <p className="font-medium">{policy.type}</p>
+                                <p className="text-sm text-gray-500">
+                                  {policy.customerName} - {policy.policyId}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-green-600">{policy.premium}</p>
+                              {policy.createdAt && (
+                                <p className="text-xs text-gray-500">
+                                  {new Date(policy.createdAt).toLocaleDateString("en-IN", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">Term Life Insurance</p>
-                            <p className="text-sm text-gray-500">Rajesh Kumar - LIC-2024-0123</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">₹25,000</p>
-                          <p className="text-xs text-gray-500">2 hours ago</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="font-medium">Health Insurance</p>
-                            <p className="text-sm text-gray-500">Priya Sharma - LIC-2024-0124</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">₹18,500</p>
-                          <p className="text-xs text-gray-500">5 hours ago</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="font-medium">Endowment Plan</p>
-                            <p className="text-sm text-gray-500">Amit Singh - LIC-2024-0125</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">₹12,000</p>
-                          <p className="text-xs text-gray-500">1 day ago</p>
-                        </div>
-                      </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-600">No recent policies found.</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -523,8 +795,10 @@ function DashboardPageContent() {
                             </svg>
                           </div>
                           <h3 className="font-medium">Total Customers</h3>
-                          <p className="text-2xl font-bold text-blue-600">2,845</p>
-                          <p className="text-sm text-gray-600 mt-1">+12% this month</p>
+                          <p className="text-2xl font-bold text-blue-600">
+                            {dashboardData?.customers?.counts?.total ?? 0}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">In MongoDB</p>
                         </CardContent>
                       </Card>
 
@@ -536,8 +810,10 @@ function DashboardPageContent() {
                             </svg>
                           </div>
                           <h3 className="font-medium">Active Customers</h3>
-                          <p className="text-2xl font-bold text-green-600">2,156</p>
-                          <p className="text-sm text-gray-600 mt-1">75.8% of total</p>
+                          <p className="text-2xl font-bold text-green-600">
+                            {dashboardData?.customers?.counts?.active ?? 0}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">Status: active</p>
                         </CardContent>
                       </Card>
 
@@ -549,8 +825,10 @@ function DashboardPageContent() {
                             </svg>
                           </div>
                           <h3 className="font-medium">New This Month</h3>
-                          <p className="text-2xl font-bold text-purple-600">156</p>
-                          <p className="text-sm text-gray-600 mt-1">+8% growth</p>
+                          <p className="text-2xl font-bold text-purple-600">
+                            {dashboardData?.customers?.counts?.thisMonth ?? 0}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">Joined this month</p>
                         </CardContent>
                       </Card>
 
@@ -562,8 +840,10 @@ function DashboardPageContent() {
                             </svg>
                           </div>
                           <h3 className="font-medium">At Risk</h3>
-                          <p className="text-2xl font-bold text-orange-600">89</p>
-                          <p className="text-sm text-gray-600 mt-1">Need attention</p>
+                          <p className="text-2xl font-bold text-orange-600">
+                            {dashboardData?.customers?.counts?.atRisk ?? 0}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">KYC pending / suspended</p>
                         </CardContent>
                       </Card>
                     </div>
@@ -578,53 +858,49 @@ function DashboardPageContent() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 font-bold">RK</span>
-                          </div>
-                          <div>
-                            <p className="font-medium">Rajesh Kumar</p>
-                            <p className="text-sm text-gray-500">rajesh.kumar@email.com - 9876543210</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">Active</p>
-                          <p className="text-xs text-gray-500">2 hours ago</p>
-                        </div>
-                      </div>
+                      {dashboardData?.customers?.list?.length ? (
+                        dashboardData.customers.list.map((cust: any) => {
+                          const initials = (cust.name || cust.customerName || "?")
+                            .split(" ")
+                            .filter(Boolean)
+                            .map((n: string) => n[0])
+                            .join("")
+                            .slice(0, 2)
+                            .toUpperCase();
 
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                            <span className="text-purple-600 font-bold">PS</span>
-                          </div>
-                          <div>
-                            <p className="font-medium">Priya Sharma</p>
-                            <p className="text-sm text-gray-500">priya.sharma@email.com - 9876543211</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">Active</p>
-                          <p className="text-xs text-gray-500">5 hours ago</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <span className="text-green-600 font-bold">AS</span>
-                          </div>
-                          <div>
-                            <p className="font-medium">Amit Singh</p>
-                            <p className="text-sm text-gray-500">amit.singh@email.com - 9876543212</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">Active</p>
-                          <p className="text-xs text-gray-500">1 day ago</p>
-                        </div>
-                      </div>
+                          return (
+                            <div key={cust._id || cust.customerId || cust.email} className="flex items-center justify-between p-4 border rounded-lg">
+                              <div className="flex items-center space-x-4">
+                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <span className="text-blue-600 font-bold">{initials}</span>
+                                </div>
+                                <div>
+                                  <p className="font-medium">{cust.name || cust.customerName}</p>
+                                  <p className="text-sm text-gray-500">
+                                    {cust.email || cust.customerEmail} {cust.phone ? `- ${cust.phone}` : ""}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-green-600">
+                                  {cust.status ? cust.status.charAt(0).toUpperCase() + cust.status.slice(1) : "Active"}
+                                </p>
+                                {cust.createdAt && (
+                                  <p className="text-xs text-gray-500">
+                                    {new Date(cust.createdAt).toLocaleDateString("en-IN", {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    })}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-sm text-gray-600">No recent customers found.</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -755,6 +1031,97 @@ function DashboardPageContent() {
                         </div>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="news" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>LIC & Market News</CardTitle>
+                    <CardDescription>
+                      Latest updates on LIC, Indian insurance sector, and key economic headlines.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isNewsLoading ? (
+                      <div className="space-y-3">
+                        <div className="h-4 w-32 bg-gray-200 animate-pulse rounded" />
+                        <div className="space-y-2">
+                          {Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="p-3 border rounded-lg space-y-2">
+                              <div className="h-4 w-3/4 bg-gray-200 animate-pulse rounded" />
+                              <div className="h-3 w-1/2 bg-gray-200 animate-pulse rounded" />
+                              <div className="h-3 w-1/3 bg-gray-100 animate-pulse rounded" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : newsError ? (
+                      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                        {newsError}
+                      </div>
+                    ) : news.length === 0 ? (
+                      <p className="text-sm text-gray-600">
+                        No recent news found. Please try again later.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {news.map((article: any, index: number) => (
+                          <Card
+                            key={`${article.url || article.title || "news"}-${index}`}
+                            className="border border-gray-200 hover:shadow-sm transition-shadow"
+                          >
+                            <CardContent className="p-4 flex flex-col gap-2">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <h3 className="text-sm sm:text-base font-semibold text-gray-900">
+                                  {article.title || "Untitled article"}
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                  {article.category && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {Array.isArray(article.category)
+                                        ? article.category.join(", ")
+                                        : article.category}
+                                    </Badge>
+                                  )}
+                                  {article.source && (
+                                    <span className="text-[11px] text-gray-500">
+                                      {article.source}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {article.description && (
+                                <p className="text-xs sm:text-sm text-gray-700 line-clamp-3">
+                                  {article.description}
+                                </p>
+                              )}
+                              <div className="flex items-center justify-between gap-2 mt-1">
+                                <span className="text-[11px] text-gray-500">
+                                  {article.published_at
+                                    ? new Date(article.published_at).toLocaleString("en-IN", {
+                                        dateStyle: "medium",
+                                        timeStyle: "short",
+                                      })
+                                    : "Time not available"}
+                                </span>
+                                {article.url && (
+                                  <a
+                                    href={article.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                                  >
+                                    Read full article
+                                  </a>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

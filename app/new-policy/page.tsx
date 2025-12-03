@@ -621,7 +621,7 @@ function NewPolicyPageContent() {
       
       // Redirect after showing success message
       setTimeout(() => {
-        router.push(`/policies?email=${encodeURIComponent(email)}`);
+        router.push('/policies');
       }, 3000);
       
     } catch (error) {

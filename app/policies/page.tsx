@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +21,6 @@ import CertificateGenerator from "@/components/certificate/certificate-generator
 
 function PoliciesPageContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isClearingNotifications, setIsClearingNotifications] = useState(false);
@@ -38,6 +37,9 @@ function PoliciesPageContent() {
   const [selectedPolicy, setSelectedPolicy] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [policies, setPolicies] = useState<any[]>([]);
+  const [isPoliciesLoading, setIsPoliciesLoading] = useState(true);
+  const [policiesError, setPoliciesError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     policyId: "",
     type: "",
@@ -80,80 +82,76 @@ function PoliciesPageContent() {
     { id: 4, title: "Claim Update", message: "Your claim #CLM-987654 has been processed", read: true, time: "1 week ago" }
   ]);
 
-  const [policies, setPolicies] = useState([
-    {
-      id: "LIC-123456789",
-      type: "Term Life",
-      customerName: "Rajesh Kumar",
-      premium: "₹25,000",
-      sumAssured: "₹50,00,000",
-      status: "active",
-      startDate: "15 Jan 2023",
-      endDate: "14 Jan 2043",
-      nextPremium: "15 Dec 2024",
-      category: "life",
-      customerImage: "https://randomuser.me/api/portraits/men/32.jpg"
-    },
-    {
-      id: "LIC-234567890",
-      type: "Health Insurance",
-      customerName: "Priya Sharma",
-      premium: "₹18,000",
-      sumAssured: "₹10,00,000",
-      status: "active",
-      startDate: "01 Mar 2023",
-      endDate: "28 Feb 2024",
-      nextPremium: "01 Jan 2025",
-      category: "health",
-      customerImage: "https://randomuser.me/api/portraits/women/44.jpg"
-    },
-    {
-      id: "LIC-345678901",
-      type: "Car Insurance",
-      customerName: "Amit Patel",
-      premium: "₹12,000",
-      sumAssured: "₹8,00,000",
-      status: "expired",
-      startDate: "15 Jun 2023",
-      endDate: "14 Jun 2024",
-      nextPremium: "15 Jun 2024",
-      category: "vehicle",
-      customerImage: "https://randomuser.me/api/portraits/men/67.jpg"
-    },
-    {
-      id: "LIC-456789012",
-      type: "Home Insurance",
-      customerName: "Sunita Reddy",
-      premium: "₹15,000",
-      sumAssured: "₹25,00,000",
-      status: "active",
-      startDate: "10 Sep 2023",
-      endDate: "09 Sep 2024",
-      nextPremium: "10 Dec 2024",
-      category: "property",
-      customerImage: "https://randomuser.me/api/portraits/women/33.jpg"
-    },
-    {
-      id: "LIC-567890123",
-      type: "Term Life",
-      customerName: "Vikram Singh",
-      premium: "₹30,000",
-      sumAssured: "₹75,00,000",
-      status: "pending",
-      startDate: "20 Nov 2024",
-      endDate: "19 Nov 2044",
-      nextPremium: "20 Dec 2024",
-      category: "life",
-      customerImage: "https://randomuser.me/api/portraits/men/29.jpg"
-    }
-  ]);
+  // Helper to format dates for display
+  const formatDate = (value: string | Date | null | undefined) => {
+    if (!value) return "";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
   useEffect(() => {
-    const emailParam = searchParams.get("email");
-    if (emailParam) {
-      setEmail(decodeURIComponent(emailParam));
+    // Get email from localStorage instead of URL params for security
+    const user = localStorage.getItem('user');
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        const userEmail = userData.email || "";
+        setEmail(userEmail);
+
+        // Fetch policies for this user from MongoDB
+        const fetchPolicies = async () => {
+          try {
+            setIsPoliciesLoading(true);
+            setPoliciesError(null);
+            // Fetch all policies from MongoDB (no email filter)
+            const res = await fetch(`/api/policies`);
+            const data = await res.json();
+
+            if (!res.ok) {
+              setPolicies([]);
+              setPoliciesError(data.error || "Failed to load policies");
+              return;
+            }
+
+            const policiesFromDb = (data.policies || []).map((p: any) => ({
+              id: p.policyId,
+              type: p.type,
+              customerName: p.customerName,
+              customerEmail: p.customerEmail,
+              premium: p.premium,
+              sumAssured: p.sumAssured,
+              status: p.status,
+              startDate: formatDate(p.startDate),
+              endDate: formatDate(p.endDate),
+              nextPremium: formatDate(p.nextPremium),
+              category: p.category,
+              customerImage: p.customerImage || "",
+            }));
+
+            setPolicies(policiesFromDb);
+          } catch (err) {
+            console.error("Error fetching policies:", err);
+            setPolicies([]);
+            setPoliciesError("Network error while loading policies");
+          } finally {
+            setIsPoliciesLoading(false);
+          }
+        };
+
+        fetchPolicies();
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        setIsPoliciesLoading(false);
+      }
+    } else {
+      setIsPoliciesLoading(false);
     }
-  }, [searchParams]);
+  }, []);
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -259,8 +257,19 @@ function PoliciesPageContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.policyId || !formData.type || !formData.customerName || !formData.premium || !formData.sumAssured || !formData.startDate || !formData.endDate || !formData.nextPremium || !formData.category) {
-      alert("Please fill all required fields");
+    if (
+      !formData.policyId ||
+      !formData.type ||
+      !formData.customerName ||
+      !formData.customerEmail ||
+      !formData.premium ||
+      !formData.sumAssured ||
+      !formData.startDate ||
+      !formData.endDate ||
+      !formData.nextPremium ||
+      !formData.category
+    ) {
+      alert("Please fill all required fields, including customer email");
       return;
     }
 
@@ -271,6 +280,7 @@ function PoliciesPageContent() {
         policyId: formData.policyId,
         type: formData.type,
         customerName: formData.customerName,
+        customerEmail: formData.customerEmail,
         premium: formData.premium,
         sumAssured: formData.sumAssured,
         status: "active",
@@ -278,7 +288,6 @@ function PoliciesPageContent() {
         endDate: formData.endDate,
         nextPremium: formData.nextPremium,
         category: formData.category,
-        customerEmail: email,
         customerImage: formData.customerImage || "https://randomuser.me/api/portraits/lego/0.jpg"
       };
 
@@ -298,14 +307,15 @@ function PoliciesPageContent() {
           id: data.policy.policyId,
           type: data.policy.type,
           customerName: data.policy.customerName,
+          customerEmail: data.policy.customerEmail,
           premium: data.policy.premium,
           sumAssured: data.policy.sumAssured,
           status: data.policy.status,
-          startDate: data.policy.startDate,
-          endDate: data.policy.endDate,
-          nextPremium: data.policy.nextPremium,
+          startDate: formatDate(data.policy.startDate),
+          endDate: formatDate(data.policy.endDate),
+          nextPremium: formatDate(data.policy.nextPremium),
           category: data.policy.category,
-          customerImage: data.policy.customerImage
+          customerImage: data.policy.customerImage,
         };
 
         setPolicies(prev => [newPolicy, ...prev]);
@@ -403,6 +413,7 @@ function PoliciesPageContent() {
       policyId: policy.id,
       type: policy.type,
       customerName: policy.customerName,
+      customerEmail: policy.customerEmail || "",
       premium: policy.premium,
       sumAssured: policy.sumAssured,
       status: policy.status || "active",
@@ -412,7 +423,6 @@ function PoliciesPageContent() {
       category: policy.category,
       customerImage: policy.customerImage || "",
       // Customer Information - defaults
-      customerEmail: "",
       customerPhone: "",
       customerAadhaar: "",
       customerPAN: "",
@@ -449,75 +459,125 @@ function PoliciesPageContent() {
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.policyId || !formData.type || !formData.customerName || !formData.premium || !formData.sumAssured || !formData.startDate || !formData.endDate || !formData.nextPremium || !formData.category) {
-      alert("Please fill all required fields");
+
+    if (
+      !formData.policyId ||
+      !formData.type ||
+      !formData.customerName ||
+      !formData.customerEmail ||
+      !formData.premium ||
+      !formData.sumAssured ||
+      !formData.startDate ||
+      !formData.endDate ||
+      !formData.nextPremium ||
+      !formData.category
+    ) {
+      alert("Please fill all required fields, including customer email");
       return;
     }
 
     setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const updatedPolicy = {
-      id: formData.policyId,
-      type: formData.type,
-      customerName: formData.customerName,
-      premium: formData.premium,
-      sumAssured: formData.sumAssured,
-      status: selectedPolicy?.status || "active",
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      nextPremium: formData.nextPremium,
-      category: formData.category,
-      customerImage: formData.customerImage
-    };
 
-    setPolicies(prev => prev.map(policy => 
-      policy.id === selectedPolicy?.id ? updatedPolicy : policy
-    ));
-    
-    // Reset form
-    setFormData({
-      policyId: "",
-      type: "",
-      customerName: "",
-      premium: "",
-      sumAssured: "",
-      status: "active",
-      startDate: "",
-      endDate: "",
-      nextPremium: "",
-      category: "",
-      customerImage: "",
-      // Customer Information
-      customerEmail: "",
-      customerPhone: "",
-      customerAadhaar: "",
-      customerPAN: "",
-      customerAddress: "",
-      customerDOB: "",
-      customerOccupation: "",
-      // Nominee Information
-      nomineeName: "",
-      nomineeRelation: "",
-      nomineePhone: "",
-      nomineeAge: "",
-      // Policy Details
-      premiumFrequency: "Yearly",
-      policyTerm: "",
-      paymentMode: "",
-      medicalRequired: "No",
-      existingPolicies: "0",
-      // Agent/Branch Information
-      agentCode: "",
-      branchCode: ""
-    });
-    
-    setIsEditDialogOpen(false);
-    setSelectedPolicy(null);
-    setIsSubmitting(false);
+    try {
+      const payload = {
+        policyId: formData.policyId,
+        type: formData.type,
+        customerName: formData.customerName,
+        customerEmail: formData.customerEmail,
+        premium: formData.premium,
+        sumAssured: formData.sumAssured,
+        status: selectedPolicy?.status || "active",
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        nextPremium: formData.nextPremium,
+        category: formData.category,
+        customerImage: formData.customerImage,
+      };
+
+      const res = await fetch("/api/policies", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Failed to update policy");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const updated = data.policy;
+
+      const updatedPolicy = {
+        id: updated.policyId,
+        type: updated.type,
+        customerName: updated.customerName,
+        customerEmail: updated.customerEmail,
+        premium: updated.premium,
+        sumAssured: updated.sumAssured,
+        status: updated.status,
+        startDate: formatDate(updated.startDate),
+        endDate: formatDate(updated.endDate),
+        nextPremium: formatDate(updated.nextPremium),
+        category: updated.category,
+        customerImage: updated.customerImage,
+      };
+
+      setPolicies(prev =>
+        prev.map(policy =>
+          policy.id === selectedPolicy?.id ? updatedPolicy : policy
+        )
+      );
+
+      // Reset form
+      setFormData({
+        policyId: "",
+        type: "",
+        customerName: "",
+        premium: "",
+        sumAssured: "",
+        status: "active",
+        startDate: "",
+        endDate: "",
+        nextPremium: "",
+        category: "",
+        customerImage: "",
+        // Customer Information
+        customerEmail: "",
+        customerPhone: "",
+        customerAadhaar: "",
+        customerPAN: "",
+        customerAddress: "",
+        customerDOB: "",
+        customerOccupation: "",
+        // Nominee Information
+        nomineeName: "",
+        nomineeRelation: "",
+        nomineePhone: "",
+        nomineeAge: "",
+        // Policy Details
+        premiumFrequency: "Yearly",
+        policyTerm: "",
+        paymentMode: "",
+        medicalRequired: "No",
+        existingPolicies: "0",
+        // Agent/Branch Information
+        agentCode: "",
+        branchCode: "",
+      });
+
+      setIsEditDialogOpen(false);
+      setSelectedPolicy(null);
+    } catch (err) {
+      console.error("Update policy error:", err);
+      alert("Network error while updating policy");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEditCancel = () => {
@@ -769,6 +829,18 @@ function PoliciesPageContent() {
                               />
                             </div>
                           </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="customerEmail">Customer Email</Label>
+                            <Input
+                              id="customerEmail"
+                              type="email"
+                              placeholder="e.g., customer@example.com"
+                              value={formData.customerEmail}
+                              onChange={(e) => handleInputChange("customerEmail", e.target.value)}
+                              required
+                            />
+                          </div>
                           
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -988,6 +1060,18 @@ function PoliciesPageContent() {
                               />
                             </div>
                           </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="editCustomerEmail">Customer Email</Label>
+                            <Input
+                              id="editCustomerEmail"
+                              type="email"
+                              placeholder="e.g., customer@example.com"
+                              value={formData.customerEmail}
+                              onChange={(e) => handleInputChange("customerEmail", e.target.value)}
+                              required
+                            />
+                          </div>
                           
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -1204,9 +1288,36 @@ function PoliciesPageContent() {
             </Card>
 
             {/* Policies Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPolicies.map((policy) => (
-                <Card key={policy.id} className="hover:shadow-lg transition-shadow">
+            {isPoliciesLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i} className="border border-gray-200">
+                    <CardHeader>
+                      <div className="space-y-2">
+                        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-24 bg-gray-100 rounded animate-pulse" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="h-3 w-full bg-gray-100 rounded animate-pulse" />
+                        <div className="h-3 w-3/4 bg-gray-100 rounded animate-pulse" />
+                        <div className="h-3 w-2/3 bg-gray-100 rounded animate-pulse" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : policiesError ? (
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-red-600">{policiesError}</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredPolicies.map((policy) => (
+                  <Card key={policy.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div>
@@ -1282,17 +1393,18 @@ function PoliciesPageContent() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
-            {filteredPolicies.length === 0 && (
-              <Card>
+            {!isPoliciesLoading && !policiesError && filteredPolicies.length === 0 && (
+              <Card className="mt-6">
                 <CardContent className="p-8 text-center">
                   <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No policies found</h3>
-                  <p className="text-gray-500">Try adjusting your search or filters to find what you're looking for.</p>
+                  <p className="text-gray-500">Try adjusting your search or filters, or add a new policy.</p>
                 </CardContent>
               </Card>
             )}

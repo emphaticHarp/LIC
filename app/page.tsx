@@ -32,8 +32,8 @@ export default function LoginPage() {
         // Store user in localStorage for session management
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // Redirect to dashboard with email as query parameter
-        router.push(`/dashboard?email=${encodeURIComponent(data.user.email)}`);
+        // Redirect to dashboard without exposing credentials in URL
+        router.push('/dashboard');
       } else {
         alert(data.error || 'Failed to login. Please try again.');
       }

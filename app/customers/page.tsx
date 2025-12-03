@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +22,6 @@ import { CustomerManagementComponent } from "@/components/features/customer-mana
 
 function CustomersPageContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isClearingNotifications, setIsClearingNotifications] = useState(false);
@@ -35,13 +33,18 @@ function CustomersPageContent() {
     { id: 3, title: "Customer Birthday", message: "Amit Patel's birthday tomorrow - send wishes", read: true, time: "3 days ago" }
   ]);
 
-  // Set email from URL parameters on component mount
+  // Set email from localStorage on component mount for security
   useEffect(() => {
-    const emailParam = searchParams.get('email');
-    if (emailParam) {
-      setEmail(emailParam);
+    const user = localStorage.getItem('user');
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        setEmail(userData.email || "");
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
     }
-  }, [searchParams]);
+  }, []);
 
   // Customer states
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
@@ -55,6 +58,9 @@ function CustomersPageContent() {
   const [isViewCustomerDialogOpen, setIsViewCustomerDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isSubmittingCustomer, setIsSubmittingCustomer] = useState(false);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [isCustomersLoading, setIsCustomersLoading] = useState(true);
+  const [customersError, setCustomersError] = useState<string | null>(null);
 
   // Customer form data
   const [customerFormData, setCustomerFormData] = useState({
@@ -77,147 +83,70 @@ function CustomersPageContent() {
     nomineeContact: ""
   });
 
-  // Sample customer data
-  const customers = [
-    {
-      id: "CUST-001",
-      name: "Priya Sharma",
-      avatar: "https://randomuser.me/api/portraits/women/1.jpg",
-      phone: "+91 98765 43210",
-      email: "priya.sharma@email.com",
-      address: "123, MG Road, Bangalore, Karnataka - 560001",
-      dateOfBirth: "1985-06-15",
-      aadhaar: "2345-6789-0123",
-      pan: "ABCPN1234E",
-      policyIds: ["LIC-123456789", "LIC-123456790"],
-      policyType: "Life Insurance",
-      status: "Active",
-      premiumAmount: "₹25,000",
-      nextDueDate: "15 Dec 2024",
-      lastPayment: "15 Nov 2024",
-      agentName: "Rajesh Kumar",
-      policies: [
-        {
-          policyNumber: "LIC-123456789",
-          policyType: "Life Insurance",
-          sumAssured: "₹50,00,000",
-          premiumAmount: "₹25,000",
-          premiumFrequency: "Yearly",
-          startDate: "15 Jan 2020",
-          maturityDate: "15 Jan 2040",
-          status: "Active",
-          nominee: "Rahul Sharma",
-          nomineeRelation: "Spouse"
-        },
-        {
-          policyNumber: "LIC-123456790",
-          policyType: "Health Insurance",
-          sumAssured: "₹10,00,000",
-          premiumAmount: "₹15,000",
-          premiumFrequency: "Yearly",
-          startDate: "01 Mar 2022",
-          maturityDate: "01 Mar 2032",
-          status: "Active",
-          nominee: "Rahul Sharma",
-          nomineeRelation: "Spouse"
+  // Load customers from MongoDB (via API)
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        setIsCustomersLoading(true);
+        setCustomersError(null);
+        const res = await fetch("/api/customers?limit=100");
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          setCustomers([]);
+          setCustomersError(data.error || "Failed to load customers");
+          return;
         }
-      ],
-      paymentHistory: [
-        { date: "15 Nov 2024", amount: "₹25,000", mode: "UPI", policyNumber: "LIC-123456789", status: "Success" },
-        { date: "15 Oct 2024", amount: "₹15,000", mode: "Net Banking", policyNumber: "LIC-123456790", status: "Success" },
-        { date: "15 Sep 2024", amount: "₹25,000", mode: "Card", policyNumber: "LIC-123456789", status: "Success" }
-      ],
-      claims: []
-    },
-    {
-      id: "CUST-002",
-      name: "Amit Patel",
-      avatar: "https://randomuser.me/api/portraits/men/2.jpg",
-      phone: "+91 87654 32109",
-      email: "amit.patel@email.com",
-      address: "456, Brigade Road, Bangalore, Karnataka - 560025",
-      dateOfBirth: "1982-03-22",
-      aadhaar: "3456-7890-1234",
-      pan: "XYZAB5678C",
-      policyIds: ["LIC-234567891"],
-      policyType: "Vehicle Insurance",
-      status: "Lapsed",
-      premiumAmount: "₹12,000",
-      nextDueDate: "01 Dec 2024",
-      lastPayment: "01 Oct 2024",
-      agentName: "Sneha Reddy",
-      policies: [
-        {
-          policyNumber: "LIC-234567891",
-          policyType: "Vehicle Insurance",
-          sumAssured: "₹8,00,000",
-          premiumAmount: "₹12,000",
-          premiumFrequency: "Yearly",
-          startDate: "01 Jun 2021",
-          maturityDate: "01 Jun 2026",
-          status: "Lapsed",
-          nominee: "Priya Patel",
-          nomineeRelation: "Spouse"
-        }
-      ],
-      paymentHistory: [
-        { date: "01 Oct 2024", amount: "₹12,000", mode: "Cash", policyNumber: "LIC-234567891", status: "Failed" },
-        { date: "01 Jun 2024", amount: "₹12,000", mode: "UPI", policyNumber: "LIC-234567891", status: "Success" }
-      ],
-      claims: []
-    },
-    {
-      id: "CUST-003",
-      name: "Neha Gupta",
-      avatar: "https://randomuser.me/api/portraits/women/3.jpg",
-      phone: "+91 76543 21098",
-      email: "neha.gupta@email.com",
-      address: "789, Whitefield, Bangalore, Karnataka - 560066",
-      dateOfBirth: "1990-11-08",
-      aadhaar: "4567-8901-2345",
-      pan: "LMNOP9012D",
-      policyIds: ["LIC-345678912"],
-      policyType: "Health Insurance",
-      status: "Active",
-      premiumAmount: "₹18,000",
-      nextDueDate: "20 Dec 2024",
-      lastPayment: "20 Nov 2024",
-      agentName: "Rajesh Kumar",
-      policies: [
-        {
-          policyNumber: "LIC-345678912",
-          policyType: "Health Insurance",
-          sumAssured: "₹15,00,000",
-          premiumAmount: "₹18,000",
-          premiumFrequency: "Yearly",
-          startDate: "20 Jul 2023",
-          maturityDate: "20 Jul 2033",
-          status: "Active",
-          nominee: "Ankit Gupta",
-          nomineeRelation: "Brother"
-        }
-      ],
-      paymentHistory: [
-        { date: "20 Nov 2024", amount: "₹18,000", mode: "Net Banking", policyNumber: "LIC-345678912", status: "Success" },
-        { date: "20 Jul 2024", amount: "₹18,000", mode: "Card", policyNumber: "LIC-345678912", status: "Success" }
-      ],
-      claims: [
-        {
-          claimId: "CLM-2024-003",
-          claimType: "Medical Reimbursement",
-          amount: "₹85,000",
-          status: "Pending",
-          dateFiled: "25 Nov 2024"
-        }
-      ]
-    }
-  ];
+
+        const mapped = (data.data || []).map((c: any) => ({
+          id: c.customerId || c._id,
+          name: c.name,
+          avatar: null, // could be extended to use a stored avatar URL
+          phone: c.phone,
+          email: c.email,
+          address: c.address || "",
+          dateOfBirth: c.dateOfBirth,
+          aadhaar: c.aadhaarNumber || "",
+          pan: c.panNumber || "",
+          policyIds: [],
+          policyType: "", // not directly available from customer doc
+          status:
+            c.status === "active"
+              ? "Active"
+              : c.status === "inactive"
+              ? "Inactive"
+              : c.status === "suspended"
+              ? "Suspended"
+              : "Active",
+          premiumAmount: "₹0",
+          nextDueDate: "-",
+          lastPayment: "-",
+          agentName: c.agentId ? "Assigned Agent" : "—",
+          policies: [],
+          paymentHistory: [],
+          claims: [],
+          kycStatus: c.kycStatus,
+          createdAt: c.createdAt,
+        }));
+
+        setCustomers(mapped);
+      } catch (err) {
+        console.error("Error fetching customers:", err);
+        setCustomers([]);
+        setCustomersError("Network error while loading customers");
+      } finally {
+        setIsCustomersLoading(false);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
 
   // Calculate pie chart data
   const customerStatusData = [
     { label: "Active", value: customers.filter(c => c.status === "Active").length, color: "#10b981" },
-    { label: "Lapsed", value: customers.filter(c => c.status === "Lapsed").length, color: "#ef4444" },
-    { label: "Matured", value: customers.filter(c => c.status === "Matured").length, color: "#f59e0b" }
+    { label: "Inactive", value: customers.filter(c => c.status === "Inactive").length, color: "#6b7280" },
+    { label: "Suspended", value: customers.filter(c => c.status === "Suspended").length, color: "#ef4444" }
   ];
 
   const filteredCustomers = customers.filter(customer => {
@@ -229,24 +158,8 @@ function CustomersPageContent() {
     const matchesStatus = customerFilterStatus === "all" || customer.status === customerFilterStatus;
     const matchesType = customerFilterType === "all" || customer.policyType === customerFilterType;
     
-    let matchesPremium = true;
-    if (customerFilterPremium !== "all") {
-      const premium = parseInt(customer.premiumAmount.replace(/[₹,]/g, ''));
-      switch (customerFilterPremium) {
-        case "0-10000":
-          matchesPremium = premium <= 10000;
-          break;
-        case "10000-25000":
-          matchesPremium = premium > 10000 && premium <= 25000;
-          break;
-        case "25000-50000":
-          matchesPremium = premium > 25000 && premium <= 50000;
-          break;
-        case "50000+":
-          matchesPremium = premium > 50000;
-          break;
-      }
-    }
+    // Premium & officer filters are not yet backed by DB data; keep them as "all" for now
+    const matchesPremium = customerFilterPremium === "all";
     
     const matchesOfficer = customerFilterOfficer === "all" || customer.agentName === customerFilterOfficer;
     
@@ -275,9 +188,70 @@ function CustomersPageContent() {
     setIsSubmittingCustomer(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const payload = {
+        name: customerFormData.fullName,
+        email: customerFormData.email,
+        phone: customerFormData.mobileNumber,
+        address: customerFormData.address,
+        // Optional fields mapped to model
+        panNumber: customerFormData.pan,
+        aadhaarNumber: customerFormData.aadhaar,
+        // Basic location placeholders (could be extended with dedicated inputs)
+        city: "",
+        state: "",
+        pincode: "",
+        agentId: null,
+      };
+
+      const res = await fetch("/api/customers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        alert(data.error || "Failed to add customer");
+        return;
+      }
+
+      const c = data.data;
+      const newCustomer = {
+        id: c.customerId || c._id,
+        name: c.name,
+        avatar: null,
+        phone: c.phone,
+        email: c.email,
+        address: c.address || "",
+        dateOfBirth: c.dateOfBirth,
+        aadhaar: c.aadhaarNumber || "",
+        pan: c.panNumber || "",
+        policyIds: [],
+        policyType: "",
+        status:
+          c.status === "active"
+            ? "Active"
+            : c.status === "inactive"
+            ? "Inactive"
+            : c.status === "suspended"
+            ? "Suspended"
+            : "Active",
+        premiumAmount: "₹0",
+        nextDueDate: "-",
+        lastPayment: "-",
+        agentName: c.agentId ? "Assigned Agent" : "—",
+        policies: [],
+        paymentHistory: [],
+        claims: [],
+        kycStatus: c.kycStatus,
+        createdAt: c.createdAt,
+      };
+
+      setCustomers(prev => [newCustomer, ...prev]);
+
       // Reset form
       setCustomerFormData({
         fullName: "",
@@ -419,8 +393,8 @@ function CustomersPageContent() {
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
                       <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Lapsed">Lapsed</SelectItem>
-                      <SelectItem value="Matured">Matured</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                      <SelectItem value="Suspended">Suspended</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={customerFilterType} onValueChange={setCustomerFilterType}>
@@ -764,7 +738,7 @@ function CustomersPageContent() {
                           <td className="p-2">
                             <div className="flex items-center">
                               <img
-                                src={customer.avatar}
+                                src={customer.avatar || "https://ui-avatars.com/api/?name=" + encodeURIComponent(customer.name || "CU")}
                                 alt={customer.name}
                                 className="w-8 h-8 rounded-full mr-2"
                               />
@@ -890,7 +864,7 @@ function CustomersPageContent() {
               <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
                 <div className="w-16 h-16 rounded-full overflow-hidden">
                   <img
-                    src={selectedCustomer.avatar}
+                    src={selectedCustomer.avatar || "https://ui-avatars.com/api/?name=" + encodeURIComponent(selectedCustomer.name || "CU")}
                     alt={selectedCustomer.name}
                     className="w-full h-full object-cover"
                   />

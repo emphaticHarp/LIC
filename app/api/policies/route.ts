@@ -70,3 +70,43 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { policyId, ...updates } = body;
+
+    if (!policyId) {
+      return NextResponse.json(
+        { error: 'policyId is required to update a policy' },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+
+    const policy = await Policy.findOneAndUpdate(
+      { policyId },
+      { ...updates, updatedAt: new Date() },
+      { new: true }
+    );
+
+    if (!policy) {
+      return NextResponse.json(
+        { error: 'Policy not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      { message: 'Policy updated successfully', policy },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Update policy error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
