@@ -15,9 +15,12 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Search, Filter, X } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import CertificateGenerator from "@/components/certificate/certificate-generator";
+import { PaginatedTable } from "@/components/features/paginated-table";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
 
 function PoliciesPageContent() {
   const router = useRouter();
@@ -40,6 +43,10 @@ function PoliciesPageContent() {
   const [policies, setPolicies] = useState<any[]>([]);
   const [isPoliciesLoading, setIsPoliciesLoading] = useState(true);
   const [policiesError, setPoliciesError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filterDateRange, setFilterDateRange] = useState("all");
+  const [filterPremiumRange, setFilterPremiumRange] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
   const [formData, setFormData] = useState({
     policyId: "",
     type: "",
@@ -628,7 +635,28 @@ function PoliciesPageContent() {
     const matchesType = filterType === "all" || policy.category === filterType;
     const matchesStatus = filterStatus === "all" || policy.status === filterStatus;
     
-    return matchesSearch && matchesType && matchesStatus;
+    // Date range filter
+    let matchesDateRange = true;
+    if (filterDateRange !== "all") {
+      const policyStart = new Date(policy.startDate);
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const ninetyDaysAgo = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+      
+      if (filterDateRange === "30days") matchesDateRange = policyStart >= thirtyDaysAgo;
+      else if (filterDateRange === "90days") matchesDateRange = policyStart >= ninetyDaysAgo;
+    }
+    
+    // Premium range filter
+    let matchesPremium = true;
+    if (filterPremiumRange !== "all") {
+      const premiumNum = parseInt(policy.premium.replace(/[^\d]/g, "")) || 0;
+      if (filterPremiumRange === "low") matchesPremium = premiumNum < 50000;
+      else if (filterPremiumRange === "medium") matchesPremium = premiumNum >= 50000 && premiumNum < 200000;
+      else if (filterPremiumRange === "high") matchesPremium = premiumNum >= 200000;
+    }
+    
+    return matchesSearch && matchesType && matchesStatus && matchesDateRange && matchesPremium;
   });
 
   const getStatusColor = (status: string) => {
@@ -711,6 +739,43 @@ function PoliciesPageContent() {
                         <SelectItem value="pending">Pending</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Select value={filterDateRange} onValueChange={setFilterDateRange}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Filter by date" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Dates</SelectItem>
+                        <SelectItem value="30days">Last 30 Days</SelectItem>
+                        <SelectItem value="90days">Last 90 Days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={filterPremiumRange} onValueChange={setFilterPremiumRange}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Filter by premium" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Premiums</SelectItem>
+                        <SelectItem value="low">Low (&lt;₹50K)</SelectItem>
+                        <SelectItem value="medium">Medium (₹50K-₹2L)</SelectItem>
+                        <SelectItem value="high">High (&gt;₹2L)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setFilterType("all");
+                        setFilterStatus("all");
+                        setFilterDateRange("all");
+                        setFilterPremiumRange("all");
+                        setCurrentPage(1);
+                      }}
+                      className="w-full sm:w-auto"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Clear Filters
+                    </Button>
                     <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                       <DialogTrigger asChild>
                         <Button className="w-full sm:w-auto">
@@ -1287,27 +1352,9 @@ function PoliciesPageContent() {
               </CardContent>
             </Card>
 
-            {/* Policies Grid */}
+            {/* Policies Table with Pagination */}
             {isPoliciesLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Card key={i} className="border border-gray-200">
-                    <CardHeader>
-                      <div className="space-y-2">
-                        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-                        <div className="h-3 w-24 bg-gray-100 rounded animate-pulse" />
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="h-3 w-full bg-gray-100 rounded animate-pulse" />
-                        <div className="h-3 w-3/4 bg-gray-100 rounded animate-pulse" />
-                        <div className="h-3 w-2/3 bg-gray-100 rounded animate-pulse" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <DashboardSkeleton />
             ) : policiesError ? (
               <Card>
                 <CardContent className="p-4">
@@ -1315,6 +1362,61 @@ function PoliciesPageContent() {
                 </CardContent>
               </Card>
             ) : (
+              <PaginatedTable
+                title="All Policies"
+                description={`Showing ${filteredPolicies.length} policies`}
+                data={filteredPolicies}
+                itemsPerPage={10}
+                isLoading={isPoliciesLoading}
+                columns={[
+                  {
+                    key: "id",
+                    label: "Policy ID",
+                    render: (value) => <span className="font-medium">{value}</span>,
+                  },
+                  {
+                    key: "type",
+                    label: "Type",
+                    render: (value) => <Badge variant="outline">{value}</Badge>,
+                  },
+                  {
+                    key: "customerName",
+                    label: "Customer",
+                  },
+                  {
+                    key: "premium",
+                    label: "Premium",
+                    render: (value) => <span className="font-semibold text-green-600">{value}</span>,
+                  },
+                  {
+                    key: "status",
+                    label: "Status",
+                    render: (value) => (
+                      <Badge
+                        variant="outline"
+                        className={
+                          value === "active"
+                            ? "border-green-500 text-green-700 bg-green-50"
+                            : value === "expired"
+                            ? "border-red-500 text-red-700 bg-red-50"
+                            : "border-yellow-500 text-yellow-700 bg-yellow-50"
+                        }
+                      >
+                        {value}
+                      </Badge>
+                    ),
+                  },
+                  {
+                    key: "category",
+                    label: "Category",
+                    render: (value) => <Badge variant="secondary">{value}</Badge>,
+                  },
+                ]}
+              />
+            )}
+
+            {/* Old Grid Display - Commented Out */}
+            {false && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPolicies.map((policy) => (
                   <Card key={policy.id} className="hover:shadow-lg transition-shadow">

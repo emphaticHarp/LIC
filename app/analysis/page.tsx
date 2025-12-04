@@ -34,6 +34,11 @@ function AnalysisPageContent() {
   const [timeRange, setTimeRange] = useState("30");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
+  
+  // Pagination states
+  const [policyPerformancePage, setPolicyPerformancePage] = useState(1);
+  const [predictiveInsightsPage, setPredictiveInsightsPage] = useState(1);
+  const itemsPerPage = 4;
 
   // Sample data for analysis
   const [customerSegments] = useState([
@@ -142,8 +147,74 @@ function AnalysisPageContent() {
   };
 
   const handleExportAnalysis = () => {
-    alert("Analysis report exported successfully!");
+    if (!analysisResults) {
+      alert("Please run analysis first before exporting.");
+      return;
+    }
+
+    // Export as CSV
+    const csvContent = generateCSVReport();
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `analysis_report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    alert("Analysis report exported as CSV successfully!");
   };
+
+  const generateCSVReport = () => {
+    let csv = "LIC Analysis Report\n";
+    csv += `Generated: ${new Date().toLocaleString()}\n`;
+    csv += `Analysis Type: ${selectedAnalysis}\n`;
+    csv += `Time Range: ${timeRange} days\n\n`;
+
+    // Summary
+    csv += "SUMMARY\n";
+    csv += `Total Records,${analysisResults.summary.totalRecords}\n`;
+    csv += `Anomalies,${analysisResults.summary.anomalies}\n`;
+    csv += `Insights,${analysisResults.summary.insights}\n`;
+    csv += `Recommendations,${analysisResults.summary.recommendations}\n\n`;
+
+    // Policy Performance
+    csv += "POLICY PERFORMANCE\n";
+    csv += "Policy Type,Active Policies,Avg Premium,Growth Rate,Claims Count,Claims Ratio\n";
+    policyPerformance.forEach(policy => {
+      csv += `${policy.type},${policy.policies},${policy.avgPremium},${policy.growth}%,${policy.claims},${((policy.claims / policy.policies) * 100).toFixed(1)}%\n`;
+    });
+    csv += "\n";
+
+    // Key Findings
+    csv += "KEY FINDINGS\n";
+    analysisResults.keyFindings.forEach((finding: string) => {
+      csv += `"${finding}"\n`;
+    });
+    csv += "\n";
+
+    // Recommendations
+    csv += "RECOMMENDATIONS\n";
+    analysisResults.recommendations.forEach((rec: string) => {
+      csv += `"${rec}"\n`;
+    });
+
+    return csv;
+  };
+
+  // Pagination calculations for Policy Performance
+  const policyTotalPages = Math.ceil(policyPerformance.length / itemsPerPage);
+  const policyStartIndex = (policyPerformancePage - 1) * itemsPerPage;
+  const policyEndIndex = policyStartIndex + itemsPerPage;
+  const paginatedPolicies = policyPerformance.slice(policyStartIndex, policyEndIndex);
+
+  // Pagination calculations for Predictive Insights
+  const insightsTotalPages = Math.ceil(predictiveInsights.length / itemsPerPage);
+  const insightsStartIndex = (predictiveInsightsPage - 1) * itemsPerPage;
+  const insightsEndIndex = insightsStartIndex + itemsPerPage;
+  const paginatedInsights = predictiveInsights.slice(insightsStartIndex, insightsEndIndex);
 
   const getRiskColor = (status: string) => {
     switch (status) {
@@ -350,7 +421,7 @@ function AnalysisPageContent() {
                 <CardTitle>Policy Performance Analysis</CardTitle>
                 <CardDescription>Performance metrics by policy type</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -364,7 +435,7 @@ function AnalysisPageContent() {
                       </tr>
                     </thead>
                     <tbody>
-                      {policyPerformance.map((policy, index) => (
+                      {paginatedPolicies.map((policy, index) => (
                         <tr key={index} className="border-b hover:bg-gray-50">
                           <td className="p-2 font-medium">{policy.type}</td>
                           <td className="p-2">{policy.policies}</td>
@@ -383,6 +454,46 @@ function AnalysisPageContent() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Policy Performance Pagination */}
+                {policyTotalPages > 1 && (
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <div className="text-sm text-gray-600">
+                      Showing {policyStartIndex + 1} to {Math.min(policyEndIndex, policyPerformance.length)} of {policyPerformance.length} policies
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPolicyPerformancePage(Math.max(1, policyPerformancePage - 1))}
+                        disabled={policyPerformancePage === 1}
+                      >
+                        ← Previous
+                      </Button>
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: policyTotalPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={policyPerformancePage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setPolicyPerformancePage(page)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPolicyPerformancePage(Math.min(policyTotalPages, policyPerformancePage + 1))}
+                        disabled={policyPerformancePage === policyTotalPages}
+                      >
+                        Next →
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -392,9 +503,9 @@ function AnalysisPageContent() {
                 <CardTitle>Predictive Analytics</CardTitle>
                 <CardDescription>AI-powered predictions and forecasts</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {predictiveInsights.map((insight, index) => (
+                  {paginatedInsights.map((insight, index) => (
                     <Card key={index} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between mb-2">
@@ -415,6 +526,46 @@ function AnalysisPageContent() {
                     </Card>
                   ))}
                 </div>
+
+                {/* Predictive Insights Pagination */}
+                {insightsTotalPages > 1 && (
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <div className="text-sm text-gray-600">
+                      Showing {insightsStartIndex + 1} to {Math.min(insightsEndIndex, predictiveInsights.length)} of {predictiveInsights.length} insights
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPredictiveInsightsPage(Math.max(1, predictiveInsightsPage - 1))}
+                        disabled={predictiveInsightsPage === 1}
+                      >
+                        ← Previous
+                      </Button>
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: insightsTotalPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={predictiveInsightsPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setPredictiveInsightsPage(page)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPredictiveInsightsPage(Math.min(insightsTotalPages, predictiveInsightsPage + 1))}
+                        disabled={predictiveInsightsPage === insightsTotalPages}
+                      >
+                        Next →
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

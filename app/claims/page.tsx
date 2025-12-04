@@ -16,10 +16,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import { PieChart } from "@/components/ui/pie-chart";
 import { ClaimsManagementComponent } from "@/components/features/claims-management";
+import { PaginatedTable } from "@/components/features/paginated-table";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
 
 function ClaimsPageContent() {
   const router = useRouter();
@@ -31,6 +34,10 @@ function ClaimsPageContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
+  const [filterDateRange, setFilterDateRange] = useState("all");
+  const [filterAmountRange, setFilterAmountRange] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isClaimsLoading, setIsClaimsLoading] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -905,7 +912,28 @@ function ClaimsPageContent() {
     const matchesStatus = filterStatus === "all" || claim.status === filterStatus;
     const matchesType = filterType === "all" || claim.claimType.toLowerCase().replace(/\s+/g, '-') === filterType;
     
-    return matchesSearch && matchesStatus && matchesType;
+    // Date range filter
+    let matchesDateRange = true;
+    if (filterDateRange !== "all") {
+      const claimDate = new Date(claim.dateFiled);
+      const today = new Date();
+      const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      if (filterDateRange === "7days") matchesDateRange = claimDate >= sevenDaysAgo;
+      else if (filterDateRange === "30days") matchesDateRange = claimDate >= thirtyDaysAgo;
+    }
+    
+    // Amount range filter
+    let matchesAmount = true;
+    if (filterAmountRange !== "all") {
+      const amountNum = parseInt(claim.amount.replace(/[^\d]/g, "")) || 0;
+      if (filterAmountRange === "low") matchesAmount = amountNum < 100000;
+      else if (filterAmountRange === "medium") matchesAmount = amountNum >= 100000 && amountNum < 500000;
+      else if (filterAmountRange === "high") matchesAmount = amountNum >= 500000;
+    }
+    
+    return matchesSearch && matchesStatus && matchesType && matchesDateRange && matchesAmount;
   });
 
   const getStatusColor = (status: string) => {
@@ -1065,6 +1093,42 @@ function ClaimsPageContent() {
                       <SelectItem value="home-insurance">Home Insurance</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select value={filterDateRange} onValueChange={setFilterDateRange}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="Filter by date" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Dates</SelectItem>
+                      <SelectItem value="7days">Last 7 Days</SelectItem>
+                      <SelectItem value="30days">Last 30 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={filterAmountRange} onValueChange={setFilterAmountRange}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="Filter by amount" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Amounts</SelectItem>
+                      <SelectItem value="low">Low (&lt;₹1L)</SelectItem>
+                      <SelectItem value="medium">Medium (₹1L-₹5L)</SelectItem>
+                      <SelectItem value="high">High (&gt;₹5L)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setFilterStatus("all");
+                      setFilterType("all");
+                      setFilterDateRange("all");
+                      setFilterAmountRange("all");
+                      setCurrentPage(1);
+                    }}
+                    className="whitespace-nowrap"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Clear
+                  </Button>
                   <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                     <DialogTrigger asChild>
                       <Button>
@@ -1221,6 +1285,81 @@ function ClaimsPageContent() {
               <TabsContent value="claims" className="space-y-4">
                 {/* Claims Table */}
                 <Card>
+                  <PaginatedTable
+                    title="All Claims"
+                    description={`Showing ${filteredClaims.length} of ${claims.length} claims`}
+                    data={filteredClaims}
+                    itemsPerPage={10}
+                    isLoading={isClaimsLoading}
+                    columns={[
+                      {
+                        key: "id",
+                        label: "Claim ID",
+                        render: (value) => <span className="font-medium">{value}</span>,
+                      },
+                      {
+                        key: "claimantName",
+                        label: "Claimant",
+                      },
+                      {
+                        key: "policyId",
+                        label: "Policy ID",
+                      },
+                      {
+                        key: "claimType",
+                        label: "Type",
+                        render: (value) => <Badge variant="outline">{value}</Badge>,
+                      },
+                      {
+                        key: "amount",
+                        label: "Amount",
+                        render: (value) => <span className="font-semibold text-green-600">{value}</span>,
+                      },
+                      {
+                        key: "status",
+                        label: "Status",
+                        render: (value) => (
+                          <Badge
+                            variant="outline"
+                            className={
+                              value === "approved"
+                                ? "border-green-500 text-green-700 bg-green-50"
+                                : value === "pending"
+                                ? "border-yellow-500 text-yellow-700 bg-yellow-50"
+                                : value === "processing"
+                                ? "border-blue-500 text-blue-700 bg-blue-50"
+                                : "border-red-500 text-red-700 bg-red-50"
+                            }
+                          >
+                            {value}
+                          </Badge>
+                        ),
+                      },
+                      {
+                        key: "priority",
+                        label: "Priority",
+                        render: (value) => (
+                          <Badge
+                            variant="outline"
+                            className={
+                              value === "high"
+                                ? "border-red-500 text-red-700 bg-red-50"
+                                : value === "medium"
+                                ? "border-yellow-500 text-yellow-700 bg-yellow-50"
+                                : "border-green-500 text-green-700 bg-green-50"
+                            }
+                          >
+                            {value}
+                          </Badge>
+                        ),
+                      },
+                    ]}
+                  />
+                </Card>
+
+                  {/* Old Table Display - Commented Out */}
+                  {false && (
+                  <Card>
                   <CardHeader>
                     <CardTitle>All Claims</CardTitle>
                     <CardDescription>
@@ -1327,6 +1466,7 @@ function ClaimsPageContent() {
                     </div>
                   </CardContent>
                 </Card>
+            )}
               </TabsContent>
               
               <TabsContent value="customers" className="space-y-4">

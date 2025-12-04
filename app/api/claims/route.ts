@@ -1,34 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-import mongoose from 'mongoose';
-import { createAuditLog } from '@/lib/audit';
-
-const ClaimSchema = new mongoose.Schema(
-  {
-    claimId: { type: String, unique: true },
-    policyId: mongoose.Schema.Types.ObjectId,
-    customerId: mongoose.Schema.Types.ObjectId,
-    claimAmount: Number,
-    claimType: String,
-    status: {
-      type: String,
-      enum: ['submitted', 'under_review', 'approved', 'rejected', 'paid'],
-      default: 'submitted',
-    },
-    description: String,
-    documents: [String],
-    submittedDate: Date,
-    approvedDate: Date,
-    paidDate: Date,
-    approvedBy: String,
-    rejectionReason: String,
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now },
-  },
-  { timestamps: true }
-);
-
-const Claim = mongoose.models.Claim || mongoose.model('Claim', ClaimSchema);
+import { Claim } from '@/models/Claim';
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,19 +9,37 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
+    const search = searchParams.get('search') || '';
     const status = searchParams.get('status');
-    const customerId = searchParams.get('customerId');
-    const policyId = searchParams.get('policyId');
+    const claimType = searchParams.get('claimType');
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     const query: any = {};
-    if (status) query.status = status;
-    if (customerId) query.customerId = customerId;
-    if (policyId) query.policyId = policyId;
+
+    if (search) {
+      query.$or = [
+        { claimId: { $regex: search, $options: 'i' } },
+        { policyId: { $regex: search, $options: 'i' } },
+        { claimantName: { $regex: search, $options: 'i' } },
+        { customerEmail: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (claimType) {
+      query.claimType = claimType;
+    }
 
     const skip = (page - 1) * limit;
+    const sort: any = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const claims = await Claim.find(query)
-      .sort({ createdAt: -1 })
+      .sort(sort)
       .skip(skip)
       .limit(limit)
       .lean();
@@ -81,45 +71,52 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
+      claimId,
       policyId,
-      customerId,
-      claimAmount,
+      customerEmail,
+      claimantName,
       claimType,
+      amount,
+      status,
+      priority,
       description,
-      documents,
-      userId,
+      dateOfIncident,
     } = body;
 
-    if (!policyId || !customerId || !claimAmount) {
+    // Validation
+    if (!claimId || !policyId || !claimantName || !claimType || !amount || !description || !dateOfIncident) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    const claimId = `CLM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Check if claim already exists
+    const existingClaim = await Claim.findOne({ claimId });
+    if (existingClaim) {
+      return NextResponse.json(
+        { success: false, error: 'Claim with this ID already exists' },
+        { status: 400 }
+      );
+    }
 
     const claim = new Claim({
       claimId,
       policyId,
-      customerId,
-      claimAmount,
+      customerEmail,
+      claimantName,
       claimType,
+      amount,
+      status: status || 'pending',
+      priority: priority || 'medium',
       description,
-      documents: documents || [],
-      status: 'submitted',
-      submittedDate: new Date(),
+      dateOfIncident: new Date(dateOfIncident),
+      dateFiled: new Date(),
+      documents: [],
+      createdAt: new Date(),
     });
 
     await claim.save();
-
-    await createAuditLog({
-      action: 'CREATE_CLAIM',
-      entityType: 'Claim',
-      entityId: claim._id.toString(),
-      changes: { created: true, claimId },
-      userId: userId || 'system',
-    });
 
     return NextResponse.json(
       { success: true, data: claim },
@@ -129,6 +126,82 @@ export async function POST(request: NextRequest) {
     console.error('Error creating claim:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create claim' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    await connectDB();
+
+    const body = await request.json();
+    const { claimId, ...updateData } = body;
+
+    if (!claimId) {
+      return NextResponse.json(
+        { success: false, error: 'Claim ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const claim = await Claim.findOneAndUpdate(
+      { claimId },
+      { ...updateData, updatedAt: new Date() },
+      { new: true }
+    );
+
+    if (!claim) {
+      return NextResponse.json(
+        { success: false, error: 'Claim not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: claim,
+    });
+  } catch (error) {
+    console.error('Error updating claim:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update claim' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await connectDB();
+
+    const { searchParams } = new URL(request.url);
+    const claimId = searchParams.get('claimId');
+
+    if (!claimId) {
+      return NextResponse.json(
+        { success: false, error: 'Claim ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const result = await Claim.findOneAndDelete({ claimId });
+
+    if (!result) {
+      return NextResponse.json(
+        { success: false, error: 'Claim not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Claim deleted successfully',
+    });
+  } catch (error) {
+    console.error('Error deleting claim:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete claim' },
       { status: 500 }
     );
   }

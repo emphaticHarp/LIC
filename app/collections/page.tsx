@@ -16,9 +16,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { X } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import { CollectionsTrackingComponent } from "@/components/features/collections-tracking";
+import { PaginatedTable } from "@/components/features/paginated-table";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
 
 function CollectionsPageContent() {
   const router = useRouter();
@@ -32,6 +35,10 @@ function CollectionsPageContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterDays, setFilterDays] = useState("30");
+  const [filterDateRange, setFilterDateRange] = useState("all");
+  const [filterAmountRange, setFilterAmountRange] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isCollectionsLoading, setIsCollectionsLoading] = useState(false);
 
   const [notifications, setNotifications] = useState([
     { id: 1, title: "Payment Received", message: "₹25,000 received from Rajesh Kumar", read: false, time: "2 hours ago" },
@@ -451,32 +458,134 @@ function CollectionsPageContent() {
               </TabsList>
 
               <TabsContent value="due" className="space-y-6">
+                {/* Search and Filters */}
+                <Card className="mb-6">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <Input
+                        placeholder="Search by customer name or policy ID..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger className="w-full md:w-48">
+                          <SelectValue placeholder="Filter by status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="due">Due</SelectItem>
+                          <SelectItem value="overdue">Overdue</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={filterDateRange} onValueChange={setFilterDateRange}>
+                        <SelectTrigger className="w-full md:w-48">
+                          <SelectValue placeholder="Filter by date" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Dates</SelectItem>
+                          <SelectItem value="7days">Next 7 Days</SelectItem>
+                          <SelectItem value="30days">Next 30 Days</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={filterAmountRange} onValueChange={setFilterAmountRange}>
+                        <SelectTrigger className="w-full md:w-48">
+                          <SelectValue placeholder="Filter by amount" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Amounts</SelectItem>
+                          <SelectItem value="low">Low (&lt;₹20K)</SelectItem>
+                          <SelectItem value="medium">Medium (₹20K-₹50K)</SelectItem>
+                          <SelectItem value="high">High (&gt;₹50K)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setSearchTerm("");
+                          setFilterStatus("all");
+                          setFilterDateRange("all");
+                          setFilterAmountRange("all");
+                          setCurrentPage(1);
+                        }}
+                        className="whitespace-nowrap"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Clear
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Due Premiums Table with Pagination */}
+                <PaginatedTable
+                  title="Due Premiums"
+                  description="Policies with premium payments due"
+                  data={filteredDuePremiums.filter(premium => {
+                    const matchesSearch = premium.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        premium.policyId.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesStatus = filterStatus === "all" || premium.status === filterStatus;
+                    let matchesAmount = true;
+                    if (filterAmountRange !== "all") {
+                      if (filterAmountRange === "low") matchesAmount = premium.premiumAmount < 20000;
+                      else if (filterAmountRange === "medium") matchesAmount = premium.premiumAmount >= 20000 && premium.premiumAmount < 50000;
+                      else if (filterAmountRange === "high") matchesAmount = premium.premiumAmount >= 50000;
+                    }
+                    return matchesSearch && matchesStatus && matchesAmount;
+                  })}
+                  itemsPerPage={10}
+                  isLoading={isCollectionsLoading}
+                  columns={[
+                    {
+                      key: "policyId",
+                      label: "Policy ID",
+                      render: (value) => <span className="font-medium">{value}</span>,
+                    },
+                    {
+                      key: "customerName",
+                      label: "Customer",
+                    },
+                    {
+                      key: "policyType",
+                      label: "Type",
+                      render: (value) => <Badge variant="outline">{value}</Badge>,
+                    },
+                    {
+                      key: "premiumAmount",
+                      label: "Amount",
+                      render: (value) => <span className="font-semibold">₹{value.toLocaleString()}</span>,
+                    },
+                    {
+                      key: "dueDate",
+                      label: "Due Date",
+                    },
+                    {
+                      key: "status",
+                      label: "Status",
+                      render: (value, row) => (
+                        <Badge
+                          variant="outline"
+                          className={
+                            value === "overdue"
+                              ? "border-red-500 text-red-700 bg-red-50"
+                              : "border-yellow-500 text-yellow-700 bg-yellow-50"
+                          }
+                        >
+                          {value === "overdue" ? `${row.daysOverdue} days overdue` : "Due Soon"}
+                        </Badge>
+                      ),
+                    },
+                  ]}
+                />
+
+                {/* Old Display - Commented Out */}
+                {false && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Due Premiums</CardTitle>
                     <CardDescription>Policies with premium payments due</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {/* Filters */}
-                    <div className="flex items-center space-x-4 mb-4">
-                      <Input
-                        placeholder="Search by customer name or policy ID..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="max-w-sm"
-                      />
-                      <Select value={filterStatus} onValueChange={setFilterStatus}>
-                        <SelectTrigger className="w-32">
-                          <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All</SelectItem>
-                          <SelectItem value="due">Due</SelectItem>
-                          <SelectItem value="overdue">Overdue</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     <ScrollArea className="h-[400px]">
                       <div className="space-y-4">
                         {filteredDuePremiums.map((premium) => (
@@ -578,6 +687,7 @@ function CollectionsPageContent() {
                     </ScrollArea>
                   </CardContent>
                 </Card>
+                )}
               </TabsContent>
 
               <TabsContent value="record" className="space-y-6">

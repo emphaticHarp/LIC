@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ReduxProvider from "@/components/providers/ReduxProvider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { ToastProvider } from "@/components/providers/ToastProvider";
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
@@ -19,11 +21,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
-        <ReduxProvider>
-          {children}
-        </ReduxProvider>
+        <ThemeProvider>
+          <ReduxProvider>
+            <ToastProvider />
+            {children}
+          </ReduxProvider>
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>

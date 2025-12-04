@@ -16,10 +16,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { X } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import CertificateGenerator from "@/components/certificate/certificate-generator";
 import { PaymentsManagementComponent } from "@/components/features/payments-management";
+import { PaginatedTable } from "@/components/features/paginated-table";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
 import jsPDF from 'jspdf';
 // @ts-ignore - QRCode types not available
 import QRCode from 'qrcode';
@@ -33,6 +36,11 @@ function PaymentsPageContent() {
   const [showProfileSidebar, setShowProfileSidebar] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterMethod, setFilterMethod] = useState("all");
+  const [filterDateRange, setFilterDateRange] = useState("all");
+  const [filterAmountRange, setFilterAmountRange] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isPaymentsLoading, setIsPaymentsLoading] = useState(false);
   const [notifications, setNotifications] = useState([
     { id: 1, title: "Payment Received", message: "Cash payment of ₹25,000 received from Rajesh Kumar", read: false, time: "2 hours ago" },
     { id: 2, title: "UPI Payment", message: "GPay payment of ₹18,000 completed for Priya Sharma", read: false, time: "1 day ago" },
@@ -563,7 +571,30 @@ function PaymentsPageContent() {
     
     const matchesStatus = filterStatus === "all" || payment.status === filterStatus;
     
-    return matchesSearch && matchesStatus;
+    const matchesMethod = filterMethod === "all" || payment.paymentMethod === filterMethod;
+    
+    // Date range filter
+    let matchesDateRange = true;
+    if (filterDateRange !== "all") {
+      const paymentDate = new Date(payment.date);
+      const today = new Date();
+      const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      if (filterDateRange === "7days") matchesDateRange = paymentDate >= sevenDaysAgo;
+      else if (filterDateRange === "30days") matchesDateRange = paymentDate >= thirtyDaysAgo;
+    }
+    
+    // Amount range filter
+    let matchesAmount = true;
+    if (filterAmountRange !== "all") {
+      const amountNum = parseInt(payment.amount.replace(/[^\d]/g, "")) || 0;
+      if (filterAmountRange === "low") matchesAmount = amountNum < 10000;
+      else if (filterAmountRange === "medium") matchesAmount = amountNum >= 10000 && amountNum < 50000;
+      else if (filterAmountRange === "high") matchesAmount = amountNum >= 50000;
+    }
+    
+    return matchesSearch && matchesStatus && matchesMethod && matchesDateRange && matchesAmount;
   });
 
   const getStatusColor = (status: string) => {
@@ -748,6 +779,54 @@ function PaymentsPageContent() {
                       <SelectItem value="failed">Failed</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select value={filterMethod} onValueChange={setFilterMethod}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="Filter by method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Methods</SelectItem>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="upi">UPI</SelectItem>
+                      <SelectItem value="card">Card</SelectItem>
+                      <SelectItem value="netbanking">Net Banking</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={filterDateRange} onValueChange={setFilterDateRange}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="Filter by date" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Dates</SelectItem>
+                      <SelectItem value="7days">Last 7 Days</SelectItem>
+                      <SelectItem value="30days">Last 30 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={filterAmountRange} onValueChange={setFilterAmountRange}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="Filter by amount" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Amounts</SelectItem>
+                      <SelectItem value="low">Low (&lt;₹10K)</SelectItem>
+                      <SelectItem value="medium">Medium (₹10K-₹50K)</SelectItem>
+                      <SelectItem value="high">High (&gt;₹50K)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setFilterStatus("all");
+                      setFilterMethod("all");
+                      setFilterDateRange("all");
+                      setFilterAmountRange("all");
+                      setCurrentPage(1);
+                    }}
+                    className="whitespace-nowrap"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Clear
+                  </Button>
                   <Dialog open={isAddPaymentDialogOpen} onOpenChange={setIsAddPaymentDialogOpen}>
                     <DialogTrigger asChild>
                       <Button>
@@ -910,87 +989,141 @@ function PaymentsPageContent() {
               </CardContent>
             </Card>
 
-            {/* Payments Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPayments.map((payment) => (
-                <Card key={payment.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{payment.customerName}</CardTitle>
-                        <CardDescription>{payment.policyId}</CardDescription>
-                      </div>
-                      <Badge className={getStatusColor(payment.status)}>
-                        {payment.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
+            {/* Payments Table with Pagination */}
+            <PaginatedTable
+              title="All Payments"
+              description={`Showing ${filteredPayments.length} payments`}
+              data={filteredPayments}
+              itemsPerPage={10}
+              isLoading={isPaymentsLoading}
+              columns={[
+                {
+                  key: "id",
+                  label: "Payment ID",
+                  render: (value) => <span className="font-medium">{value}</span>,
+                },
+                {
+                  key: "customerName",
+                  label: "Customer",
+                },
+                {
+                  key: "policyId",
+                  label: "Policy ID",
+                },
+                {
+                  key: "amount",
+                  label: "Amount",
+                  render: (value) => <span className="font-semibold text-green-600">{value}</span>,
+                },
+                {
+                  key: "paymentMethod",
+                  label: "Method",
+                  render: (value) => <Badge variant="outline">{value}</Badge>,
+                },
+                {
+                  key: "status",
+                  label: "Status",
+                  render: (value) => (
+                    <Badge
+                      variant="outline"
+                      className={
+                        value === "completed"
+                          ? "border-green-500 text-green-700 bg-green-50"
+                          : value === "pending"
+                          ? "border-yellow-500 text-yellow-700 bg-yellow-50"
+                          : "border-red-500 text-red-700 bg-red-50"
+                      }
+                    >
+                      {value}
+                    </Badge>
+                  ),
+                },
+              ]}
+            />
+
+            {/* Old Grid Display - Commented Out */}
+            {false && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredPayments.map((payment) => (
+                  <Card key={payment.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Amount</span>
-                        <span className="font-bold text-green-600">{payment.amount}</span>
+                        <div>
+                          <CardTitle className="text-lg">{payment.customerName}</CardTitle>
+                          <CardDescription>{payment.policyId}</CardDescription>
+                        </div>
+                        <Badge className={getStatusColor(payment.status)}>
+                          {payment.status}
+                        </Badge>
                       </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Payment Method</span>
-                        <div className="flex items-center space-x-2">
-                          {getPaymentMethodIcon(payment.paymentMethod)}
-                          <span className="text-sm font-medium">
-                            {payment.paymentMethod === "upi" && payment.upiMethod ? 
-                              payment.upiMethod.charAt(0).toUpperCase() + payment.upiMethod.slice(1) :
-                              payment.paymentMethod === "card" && payment.cardType ?
-                              payment.cardType.charAt(0).toUpperCase() + payment.cardType.slice(1) + " Card" :
-                              payment.paymentMethod === "netbanking" && payment.bankName ?
-                              payment.bankName :
-                              payment.paymentMethod.charAt(0).toUpperCase() + payment.paymentMethod.slice(1)
-                            }
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Amount</span>
+                          <span className="font-bold text-green-600">{payment.amount}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Payment Method</span>
+                          <div className="flex items-center space-x-2">
+                            {getPaymentMethodIcon(payment.paymentMethod)}
+                            <span className="text-sm font-medium">
+                              {payment.paymentMethod === "upi" && payment.upiMethod ? 
+                                payment.upiMethod.charAt(0).toUpperCase() + payment.upiMethod.slice(1) :
+                                payment.paymentMethod === "card" && payment.cardType ?
+                                payment.cardType.charAt(0).toUpperCase() + payment.cardType.slice(1) + " Card" :
+                                payment.paymentMethod === "netbanking" && payment.bankName ?
+                                payment.bankName :
+                                payment.paymentMethod.charAt(0).toUpperCase() + payment.paymentMethod.slice(1)
+                              }
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Transaction ID</span>
+                          <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+                            {payment.transactionId}
                           </span>
                         </div>
-                      </div>
 
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Transaction ID</span>
-                        <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
-                          {payment.transactionId}
-                        </span>
-                      </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Date & Time</span>
+                          <div className="text-right">
+                            <p className="text-sm">{payment.date}</p>
+                            <p className="text-xs text-gray-500">{payment.time}</p>
+                          </div>
+                        </div>
 
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Date & Time</span>
-                        <div className="text-right">
-                          <p className="text-sm">{payment.date}</p>
-                          <p className="text-xs text-gray-500">{payment.time}</p>
+                        {payment.notes && (
+                          <div className="p-2 bg-gray-50 rounded text-xs text-gray-600">
+                            <strong>Note:</strong> {payment.notes}
+                          </div>
+                        )}
+
+                        <Separator />
+
+                        <div className="flex gap-2 pt-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => handleGenerateCertificate(payment)}
+                            disabled={payment.status !== "completed"}
+                          >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Certificate
+                          </Button>
                         </div>
                       </div>
-
-                      {payment.notes && (
-                        <div className="p-2 bg-gray-50 rounded text-xs text-gray-600">
-                          <strong>Note:</strong> {payment.notes}
-                        </div>
-                      )}
-
-                      <Separator />
-
-                      <div className="flex gap-2 pt-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => handleGenerateCertificate(payment)}
-                          disabled={payment.status !== "completed"}
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          Certificate
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
 
             {filteredPayments.length === 0 && (
               <Card>

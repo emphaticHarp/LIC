@@ -1,18 +1,141 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+
+const RATE_LIMIT_KEY = "login_attempts";
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
+
+interface ValidationErrors {
+  email?: string;
+  password?: string;
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [apiError, setApiError] = useState("");
+  const [apiSuccess, setApiSuccess] = useState("");
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [rateLimitTime, setRateLimitTime] = useState(0);
+
+  // Load remembered email on mount
+  useEffect(() => {
+    const remembered = localStorage.getItem("remembered_email");
+    if (remembered) {
+      setEmail(remembered);
+      setRememberMe(true);
+    }
+  }, []);
+
+  // Rate limit timer
+  useEffect(() => {
+    if (!isRateLimited) return;
+    
+    const timer = setInterval(() => {
+      setRateLimitTime((prev) => {
+        if (prev <= 1) {
+          setIsRateLimited(false);
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isRateLimited]);
+
+  const validateForm = (): boolean => {
+    const newErrors: ValidationErrors = {};
+
+    // Email validation
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    // Password validation
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const checkRateLimit = (): boolean => {
+    const attempts = localStorage.getItem(RATE_LIMIT_KEY);
+    
+    if (!attempts) {
+      return false;
+    }
+
+    const { count, timestamp } = JSON.parse(attempts);
+    const now = Date.now();
+
+    // Reset if window has passed
+    if (now - timestamp > RATE_LIMIT_WINDOW) {
+      localStorage.removeItem(RATE_LIMIT_KEY);
+      return false;
+    }
+
+    // Check if limit exceeded
+    if (count >= RATE_LIMIT_MAX) {
+      const remainingTime = Math.ceil((RATE_LIMIT_WINDOW - (now - timestamp)) / 1000);
+      setRateLimitTime(remainingTime);
+      setIsRateLimited(true);
+      setApiError(`Too many login attempts. Please try again in ${remainingTime} seconds.`);
+      return true;
+    }
+
+    return false;
+  };
+
+  const recordLoginAttempt = () => {
+    const attempts = localStorage.getItem(RATE_LIMIT_KEY);
+    
+    if (!attempts) {
+      localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({ count: 1, timestamp: Date.now() }));
+    } else {
+      const { count, timestamp } = JSON.parse(attempts);
+      const now = Date.now();
+
+      if (now - timestamp > RATE_LIMIT_WINDOW) {
+        localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({ count: 1, timestamp: now }));
+      } else {
+        localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({ count: count + 1, timestamp }));
+      }
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setApiError("");
+    setApiSuccess("");
+
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+
+    // Check rate limit
+    if (checkRateLimit()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -27,19 +150,33 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        console.log("Login successful!", data.user.email);
-        
+        // Clear rate limit on successful login
+        localStorage.removeItem(RATE_LIMIT_KEY);
+
+        // Handle remember me
+        if (rememberMe) {
+          localStorage.setItem("remembered_email", email);
+        } else {
+          localStorage.removeItem("remembered_email");
+        }
+
         // Store user in localStorage for session management
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // Redirect to dashboard without exposing credentials in URL
-        router.push('/dashboard');
+        setApiSuccess("Login successful! Redirecting...");
+        
+        // Redirect to dashboard
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 1000);
       } else {
-        alert(data.error || 'Failed to login. Please try again.');
+        recordLoginAttempt();
+        setApiError(data.error || 'Failed to login. Please try again.');
       }
     } catch (err: any) {
+      recordLoginAttempt();
       console.error('Login error:', err);
-      alert('Network error. Please check your connection and try again.');
+      setApiError('Network error. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +207,26 @@ export default function LoginPage() {
             </p>
           </div>
 
-          
+          {/* Error Alert */}
+          {apiError && (
+            <Alert className="mb-4 border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800 ml-2">
+                {apiError}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Success Alert */}
+          {apiSuccess && (
+            <Alert className="mb-4 border-green-200 bg-green-50">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800 ml-2">
+                {apiSuccess}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-4">
             {/* Email Field */}
             <div className="space-y-2">
@@ -86,11 +242,21 @@ export default function LoginPage() {
                   type="email"
                   placeholder="Enter your email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                  required
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) setErrors({ ...errors, email: undefined });
+                  }}
+                  disabled={isRateLimited || isLoading}
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-md focus:outline-none focus:ring-2 transition-colors text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    errors.email
+                      ? 'border-red-500 focus:border-red-600 focus:ring-red-100'
+                      : 'border-gray-300 focus:border-blue-600 focus:ring-blue-100'
+                  }`}
                 />
               </div>
+              {errors.email && (
+                <p className="text-red-600 text-xs font-medium">{errors.email}</p>
+              )}
             </div>
 
             {/* Password Field */}
@@ -107,14 +273,22 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                  required
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.password) setErrors({ ...errors, password: undefined });
+                  }}
+                  disabled={isRateLimited || isLoading}
+                  className={`w-full pl-10 pr-10 py-2.5 border rounded-md focus:outline-none focus:ring-2 transition-colors text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    errors.password
+                      ? 'border-red-500 focus:border-red-600 focus:ring-red-100'
+                      : 'border-gray-300 focus:border-blue-600 focus:ring-blue-100'
+                  }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                  disabled={isRateLimited || isLoading}
+                  className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 disabled:opacity-50"
                 >
                   {showPassword ? (
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,18 +302,28 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              {errors.password && (
+                <p className="text-red-600 text-xs font-medium">{errors.password}</p>
+              )}
             </div>
 
             {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between text-sm">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 accent-blue-600" />
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  disabled={isRateLimited || isLoading}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 accent-blue-600 disabled:opacity-50"
+                />
                 <span className="text-gray-700">Remember me</span>
               </label>
               <button
                 type="button"
                 onClick={() => router.push("/forgot-password")}
-                className="text-blue-600 hover:text-blue-700 font-medium"
+                disabled={isRateLimited || isLoading}
+                className="text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Forgot Password?
               </button>
@@ -148,15 +332,27 @@ export default function LoginPage() {
             {/* Login Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isRateLimited}
               className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all duration-200"
             >
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Signing in...
+                </span>
+              ) : isRateLimited ? (
+                `Try again in ${rateLimitTime}s`
+              ) : (
+                "Sign In"
+              )}
             </button>
           </form>
 
           {/* Contact Support */}
-          <p className="text-center text-sm text-gray-600">
+          <p className="text-center text-sm text-gray-600 mt-4">
             Need help?{" "}
             <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
               Contact Support

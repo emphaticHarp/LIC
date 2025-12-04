@@ -15,10 +15,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PieChart } from "@/components/ui/pie-chart";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { X } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import LoansBankingSection from "./loans-banking";
 import { CustomerManagementComponent } from "@/components/features/customer-management";
+import { PaginatedTable } from "@/components/features/paginated-table";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
 
 function CustomersPageContent() {
   const router = useRouter();
@@ -49,9 +52,14 @@ function CustomersPageContent() {
   // Customer states
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
   const [customerFilterStatus, setCustomerFilterStatus] = useState("all");
+  const [customerFilterKYC, setCustomerFilterKYC] = useState("all");
+  const [customerFilterDateRange, setCustomerFilterDateRange] = useState("all");
   const [customerFilterType, setCustomerFilterType] = useState("all");
   const [customerFilterPremium, setCustomerFilterPremium] = useState("all");
   const [customerFilterOfficer, setCustomerFilterOfficer] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isCustomersLoading, setIsCustomersLoading] = useState(true);
+  const [customersError, setCustomersError] = useState<string | null>(null);
   
   // Dialog states
   const [isAddCustomerDialogOpen, setIsAddCustomerDialogOpen] = useState(false);
@@ -59,8 +67,6 @@ function CustomersPageContent() {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isSubmittingCustomer, setIsSubmittingCustomer] = useState(false);
   const [customers, setCustomers] = useState<any[]>([]);
-  const [isCustomersLoading, setIsCustomersLoading] = useState(true);
-  const [customersError, setCustomersError] = useState<string | null>(null);
 
   // Customer form data
   const [customerFormData, setCustomerFormData] = useState({
@@ -156,14 +162,21 @@ function CustomersPageContent() {
                          (customer.policyIds && Array.isArray(customer.policyIds) && customer.policyIds.some((id: string) => String(id).toLowerCase().includes(customerSearchTerm.toLowerCase())));
     
     const matchesStatus = customerFilterStatus === "all" || customer.status === customerFilterStatus;
-    const matchesType = customerFilterType === "all" || customer.policyType === customerFilterType;
+    const matchesKYC = customerFilterKYC === "all" || customer.kycStatus === customerFilterKYC;
     
-    // Premium & officer filters are not yet backed by DB data; keep them as "all" for now
-    const matchesPremium = customerFilterPremium === "all";
+    // Date range filter
+    let matchesDateRange = true;
+    if (customerFilterDateRange !== "all") {
+      const customerDate = new Date(customer.createdAt);
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const ninetyDaysAgo = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+      
+      if (customerFilterDateRange === "30days") matchesDateRange = customerDate >= thirtyDaysAgo;
+      else if (customerFilterDateRange === "90days") matchesDateRange = customerDate >= ninetyDaysAgo;
+    }
     
-    const matchesOfficer = customerFilterOfficer === "all" || customer.agentName === customerFilterOfficer;
-    
-    return matchesSearch && matchesStatus && matchesType && matchesPremium && matchesOfficer;
+    return matchesSearch && matchesStatus && matchesKYC && matchesDateRange;
   });
 
   // Customer handler functions
@@ -432,6 +445,44 @@ function CustomersPageContent() {
                       <SelectItem value="Amit Singh">Amit Singh</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select value={customerFilterKYC} onValueChange={setCustomerFilterKYC}>
+                    <SelectTrigger className="w-full lg:w-48">
+                      <SelectValue placeholder="Filter by KYC" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All KYC Status</SelectItem>
+                      <SelectItem value="verified">Verified</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={customerFilterDateRange} onValueChange={setCustomerFilterDateRange}>
+                    <SelectTrigger className="w-full lg:w-48">
+                      <SelectValue placeholder="Filter by date" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Dates</SelectItem>
+                      <SelectItem value="30days">Last 30 Days</SelectItem>
+                      <SelectItem value="90days">Last 90 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setCustomerSearchTerm("");
+                      setCustomerFilterStatus("all");
+                      setCustomerFilterType("all");
+                      setCustomerFilterPremium("all");
+                      setCustomerFilterOfficer("all");
+                      setCustomerFilterKYC("all");
+                      setCustomerFilterDateRange("all");
+                      setCurrentPage(1);
+                    }}
+                    className="whitespace-nowrap"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Clear
+                  </Button>
                   <Dialog open={isAddCustomerDialogOpen} onOpenChange={setIsAddCustomerDialogOpen}>
                     <DialogTrigger asChild>
                       <Button onClick={handleAddCustomer}>
@@ -705,7 +756,68 @@ function CustomersPageContent() {
               </CardContent>
             </Card>
 
-            {/* Customer Table */}
+            {/* Customer Table with Pagination */}
+            <PaginatedTable
+              title="All Customers"
+              description={`Showing ${filteredCustomers.length} of ${customers.length} customers`}
+              data={filteredCustomers}
+              itemsPerPage={10}
+              isLoading={isCustomersLoading}
+              columns={[
+                {
+                  key: "name",
+                  label: "Name",
+                  render: (value) => <span className="font-medium">{value}</span>,
+                },
+                {
+                  key: "email",
+                  label: "Email",
+                },
+                {
+                  key: "phone",
+                  label: "Phone",
+                },
+                {
+                  key: "status",
+                  label: "Status",
+                  render: (value) => (
+                    <Badge
+                      variant="outline"
+                      className={
+                        value === "Active"
+                          ? "border-green-500 text-green-700 bg-green-50"
+                          : value === "Inactive"
+                          ? "border-gray-500 text-gray-700 bg-gray-50"
+                          : "border-red-500 text-red-700 bg-red-50"
+                      }
+                    >
+                      {value}
+                    </Badge>
+                  ),
+                },
+                {
+                  key: "kycStatus",
+                  label: "KYC",
+                  render: (value) => (
+                    <Badge
+                      variant="outline"
+                      className={
+                        value === "verified"
+                          ? "border-green-500 text-green-700 bg-green-50"
+                          : value === "pending"
+                          ? "border-yellow-500 text-yellow-700 bg-yellow-50"
+                          : "border-red-500 text-red-700 bg-red-50"
+                      }
+                    >
+                      {value}
+                    </Badge>
+                  ),
+                },
+              ]}
+            />
+
+            {/* Old Table - Commented Out */}
+            {false && (
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle>All Customers</CardTitle>
@@ -795,6 +907,7 @@ function CustomersPageContent() {
                 </div>
               </CardContent>
             </Card>
+            )}
 
             {/* Loans & Banking Section */}
             <Card className="mb-6">
@@ -1049,13 +1162,6 @@ export default function CustomersPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-64 h-64 mx-auto mb-4">
-            <DotLottieReact
-              src="https://lottie.host/468d72b6-4073-4ce2-b957-f33f46e8eb67/uVKp5LGC97.lottie"
-              loop
-              autoplay
-            />
-          </div>
           <p className="text-gray-600">Loading customers...</p>
         </div>
       </div>

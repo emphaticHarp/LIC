@@ -8,6 +8,9 @@ import { Menu, X } from "lucide-react";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useTheme } from "@/components/providers/theme-provider";
+import { Button } from "@/components/ui/button";
+import { AdvancedSearch } from "@/components/features/advanced-search";
 
 interface NavbarProps {
   email: string;
@@ -33,6 +36,19 @@ export default function Navbar({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  let theme = 'light';
+  let setTheme = (t: any) => {};
+  let resolvedTheme = 'light';
+  
+  try {
+    const themeContext = useTheme();
+    theme = themeContext.theme;
+    setTheme = themeContext.setTheme;
+    resolvedTheme = themeContext.resolvedTheme;
+  } catch (e) {
+    // Theme provider not available during SSR
+  }
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -82,7 +98,7 @@ export default function Navbar({
   ];
 
   return (
-    <nav className="bg-white shadow-lg border-b border-blue-100 sticky top-0 z-50">
+    <nav className="bg-white dark:bg-gray-900 shadow-lg border-b border-blue-100 dark:border-gray-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
@@ -154,6 +170,34 @@ export default function Navbar({
 
           {/* Profile Section - Desktop */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Advanced Search */}
+            <AdvancedSearch />
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (theme === "light") {
+                  setTheme("dark");
+                } else if (theme === "dark") {
+                  setTheme("system");
+                } else {
+                  setTheme("light");
+                }
+              }}
+              className="p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+              title={`Current: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
+            >
+              {resolvedTheme === "dark" ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </Button>
             {/* Notifications Dropdown */}
             <Menubar className="border-none bg-transparent shadow-none p-0 h-auto">
               <MenubarMenu>

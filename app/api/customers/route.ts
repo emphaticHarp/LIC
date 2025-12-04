@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status');
+    const kycStatus = searchParams.get('kycStatus');
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
@@ -23,11 +24,17 @@ export async function GET(request: NextRequest) {
         { email: { $regex: search, $options: 'i' } },
         { phone: { $regex: search, $options: 'i' } },
         { customerId: { $regex: search, $options: 'i' } },
+        { panNumber: { $regex: search, $options: 'i' } },
+        { aadhaarNumber: { $regex: search, $options: 'i' } },
       ];
     }
 
     if (status) {
       query.status = status;
+    }
+
+    if (kycStatus) {
+      query.kycStatus = kycStatus;
     }
 
     const skip = (page - 1) * limit;

@@ -15,6 +15,15 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
+import { CalendarHolidays } from "@/components/features/calendar-holidays";
+import { IndianStockMarket } from "@/components/features/indian-stock-market";
+import { NewsVideos } from "@/components/features/news-videos";
+import { WeatherWidget } from "@/components/features/weather-widget";
+import { AIInsights } from "@/components/features/ai-insights";
+import { AdvancedAnalytics } from "@/components/features/advanced-analytics";
+import { InfrastructureMonitoring } from "@/components/features/infrastructure-monitoring";
+import { PaginatedTable } from "@/components/features/paginated-table";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
 
 function DashboardPageContent() {
   const router = useRouter();
@@ -29,6 +38,21 @@ function DashboardPageContent() {
   const [news, setNews] = useState<any[]>([]);
   const [isNewsLoading, setIsNewsLoading] = useState(true);
   const [newsError, setNewsError] = useState<string | null>(null);
+  const [policiesPage, setPoliciesPage] = useState(1);
+  const [customersPage, setCustomersPage] = useState(1);
+  const [claimsPage, setClaimsPage] = useState(1);
+  const [collectionsPage, setCollectionsPage] = useState(1);
+  const [tabLoadingStates, setTabLoadingStates] = useState({
+    overview: true,
+    policies: false,
+    claims: false,
+    customers: false,
+    collections: false,
+    news: false,
+    aiInsights: false,
+    analytics: false,
+    monitoring: false,
+  });
 
   useEffect(() => {
     // Get email from localStorage and fetch MongoDB data
@@ -156,36 +180,58 @@ function DashboardPageContent() {
           setIsNewsLoading(false);
         }
 
-        // Generate notifications from MongoDB data
-        const notifs = [];
-        if (customersData.data?.length > 0) {
-          notifs.push({
-            id: 1,
-            title: "New Customers",
-            message: `${customersData.data.length} new customers in MongoDB`,
-            read: false,
-            time: "Just now"
-          });
+        // Fetch notifications from API
+        try {
+          const notifsRes = await fetch(`/api/notifications?email=${encodeURIComponent(userEmail)}&limit=10`);
+          const notifsData = await notifsRes.json();
+          if (notifsRes.ok && notifsData.success) {
+            const formattedNotifs = notifsData.notifications.map((n: any, idx: number) => ({
+              id: n._id || idx + 1,
+              title: n.title,
+              message: n.message,
+              read: n.read || false,
+              time: n.createdAt ? new Date(n.createdAt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : 'Just now',
+              type: n.type || 'info',
+            }));
+            setNotifications(formattedNotifs);
+          } else {
+            // Fallback to generated notifications
+            const notifs = [];
+            if (customersData.data?.length > 0) {
+              notifs.push({
+                id: 1,
+                title: "New Customers",
+                message: `${customersData.data.length} new customers in MongoDB`,
+                read: false,
+                time: "Just now"
+              });
+            }
+            if (claimsData.data?.length > 0) {
+              notifs.push({
+                id: 2,
+                title: "Claims Pending",
+                message: `${claimsData.data.length} claims awaiting processing`,
+                read: false,
+                time: "Just now"
+              });
+            }
+            if (paymentsData.data?.length > 0) {
+              notifs.push({
+                id: 3,
+                title: "Recent Payments",
+                message: `${paymentsData.data.length} payments recorded in MongoDB`,
+                read: false,
+                time: "Just now"
+              });
+            }
+            setNotifications(notifs);
+          }
+        } catch (notifError) {
+          console.error('Error fetching notifications:', notifError);
+          setNotifications([
+            { id: 1, title: "Dashboard", message: "Connected to MongoDB", read: false, time: "Now" }
+          ]);
         }
-        if (claimsData.data?.length > 0) {
-          notifs.push({
-            id: 2,
-            title: "Claims Pending",
-            message: `${claimsData.data.length} claims awaiting processing`,
-            read: false,
-            time: "Just now"
-          });
-        }
-        if (paymentsData.data?.length > 0) {
-          notifs.push({
-            id: 3,
-            title: "Recent Payments",
-            message: `${paymentsData.data.length} payments recorded in MongoDB`,
-            read: false,
-            time: "Just now"
-          });
-        }
-        setNotifications(notifs);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         // Fallback to default notifications
@@ -206,16 +252,19 @@ function DashboardPageContent() {
   // Show loading state while email is being set
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-64 h-64 mx-auto mb-4">
-            <DotLottieReact
-              src="https://lottie.host/468d72b6-4073-4ce2-b957-f33f46e8eb67/uVKp5LGC97.lottie"
-              loop
-              autoplay
-            />
-          </div>
-          <p className="text-gray-600">Loading dashboard...</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+        <Navbar
+          email="Loading..."
+          currentPage="dashboard"
+          showProfileSidebar={false}
+          setShowProfileSidebar={() => {}}
+          notifications={[]}
+          setNotifications={() => {}}
+          isClearingNotifications={false}
+          setIsClearingNotifications={() => {}}
+        />
+        <div className="p-4 sm:p-6">
+          <DashboardSkeleton />
         </div>
       </div>
     );
@@ -258,6 +307,21 @@ function DashboardPageContent() {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  const handleTabChange = (tabValue: string) => {
+    setActiveTab(tabValue);
+    // Simulate loading for tab content
+    setTabLoadingStates(prev => ({
+      ...prev,
+      [tabValue]: true
+    }));
+    setTimeout(() => {
+      setTabLoadingStates(prev => ({
+        ...prev,
+        [tabValue]: false
+      }));
+    }, 300);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
       {/* Shared Navbar */}
@@ -278,19 +342,32 @@ function DashboardPageContent() {
         <div className={`flex-1 transition-all duration-300 ${showProfileSidebar ? 'md:mr-80' : ''}`}>
           <div className="p-4 sm:p-6">
             {/* Dashboard Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto p-1">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 h-auto p-1">
                 <TabsTrigger value="overview" className="text-xs sm:text-sm py-2 px-2">Overview</TabsTrigger>
                 <TabsTrigger value="policies" className="text-xs sm:text-sm py-2 px-2">Policies</TabsTrigger>
                 <TabsTrigger value="claims" className="text-xs sm:text-sm py-2 px-2">Claims</TabsTrigger>
                 <TabsTrigger value="customers" className="text-xs sm:text-sm py-2 px-2 hidden sm:flex">Customers</TabsTrigger>
                 <TabsTrigger value="collections" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">Collections</TabsTrigger>
                 <TabsTrigger value="news" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">News</TabsTrigger>
+                <TabsTrigger value="ai-insights" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">AI Insights</TabsTrigger>
+                <TabsTrigger value="analytics" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">Analytics</TabsTrigger>
+                <TabsTrigger value="monitoring" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">Monitoring</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
-                {/* Money Collected Section */}
-                <Card>
+                {/* Calendar, Weather and Holidays Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-1 space-y-6">
+                    <WeatherWidget />
+                    <CalendarHolidays />
+                  </div>
+                  <div className="lg:col-span-2">
+                    {/* Indian Stock Market Section */}
+                    <IndianStockMarket />
+                    
+                    {/* Money Collected Section */}
+                    <Card>
                   <CardHeader>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <CardTitle className="text-xl sm:text-2xl font-bold text-green-600">Money Collected</CardTitle>
@@ -327,6 +404,8 @@ function DashboardPageContent() {
                     </div>
                   </CardContent>
                 </Card>
+                  </div>
+                </div>
 
                 {/* Business Health Snapshot */}
                 <Card>
@@ -619,53 +698,65 @@ function DashboardPageContent() {
                   </CardContent>
                 </Card>
 
-                {/* Recent Policies */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Policies</CardTitle>
-                    <CardDescription>Latest policy registrations</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {dashboardData?.policies?.list?.length ? (
-                        dashboardData.policies.list.map((policy: any) => (
-                          <div
-                            key={policy._id || policy.policyId}
-                            className="flex items-center justify-between p-4 border rounded-lg"
-                          >
-                            <div className="flex items-center space-x-4">
-                              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                              </div>
-                              <div>
-                                <p className="font-medium">{policy.type}</p>
-                                <p className="text-sm text-gray-500">
-                                  {policy.customerName} - {policy.policyId}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-bold text-green-600">{policy.premium}</p>
-                              {policy.createdAt && (
-                                <p className="text-xs text-gray-500">
-                                  {new Date(policy.createdAt).toLocaleDateString("en-IN", {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                  })}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-gray-600">No recent policies found.</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Policies Table with Pagination */}
+                <PaginatedTable
+                  title="All Policies"
+                  description="Complete list of insurance policies with pagination"
+                  data={dashboardData?.policies?.list || []}
+                  itemsPerPage={10}
+                  isLoading={isLoading}
+                  columns={[
+                    {
+                      key: "policyId",
+                      label: "Policy ID",
+                      render: (value) => <span className="font-medium">{value}</span>,
+                    },
+                    {
+                      key: "type",
+                      label: "Type",
+                      render: (value) => <Badge variant="outline">{value}</Badge>,
+                    },
+                    {
+                      key: "customerName",
+                      label: "Customer",
+                    },
+                    {
+                      key: "premium",
+                      label: "Premium",
+                      render: (value) => <span className="font-semibold text-green-600">{value}</span>,
+                    },
+                    {
+                      key: "status",
+                      label: "Status",
+                      render: (value) => (
+                        <Badge
+                          variant="outline"
+                          className={
+                            value === "active"
+                              ? "border-green-500 text-green-700 bg-green-50"
+                              : value === "pending"
+                              ? "border-yellow-500 text-yellow-700 bg-yellow-50"
+                              : "border-red-500 text-red-700 bg-red-50"
+                          }
+                        >
+                          {value}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: "createdAt",
+                      label: "Created",
+                      render: (value) =>
+                        value
+                          ? new Date(value).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "-",
+                    },
+                  ]}
+                />
               </TabsContent>
 
               <TabsContent value="claims" className="space-y-6">
@@ -731,52 +822,67 @@ function DashboardPageContent() {
                   </CardContent>
                 </Card>
 
-                {/* Recent Claims */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Claims</CardTitle>
-                    <CardDescription>Latest claim applications</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                            <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="font-medium">Health Insurance Claim</p>
-                            <p className="text-sm text-gray-500">Priya Sharma - CLM-2024-0456</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-orange-600">₹1,25,000</p>
-                          <p className="text-xs text-gray-500">Pending</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="font-medium">Motor Insurance Claim</p>
-                            <p className="text-sm text-gray-500">Rohit Verma - CLM-2024-0457</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-blue-600">₹85,000</p>
-                          <p className="text-xs text-gray-500">Processing</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Claims Table with Pagination */}
+                <PaginatedTable
+                  title="All Claims"
+                  description="Complete list of insurance claims with pagination"
+                  data={dashboardData?.claims || []}
+                  itemsPerPage={10}
+                  isLoading={tabLoadingStates.claims}
+                  columns={[
+                    {
+                      key: "claimId",
+                      label: "Claim ID",
+                      render: (value) => <span className="font-medium">{value || "CLM-2024-0000"}</span>,
+                    },
+                    {
+                      key: "customerName",
+                      label: "Customer",
+                    },
+                    {
+                      key: "claimType",
+                      label: "Type",
+                      render: (value) => <Badge variant="outline">{value || "General"}</Badge>,
+                    },
+                    {
+                      key: "claimAmount",
+                      label: "Amount",
+                      render: (value) => <span className="font-semibold text-green-600">₹{value?.toLocaleString("en-IN") || "0"}</span>,
+                    },
+                    {
+                      key: "status",
+                      label: "Status",
+                      render: (value) => (
+                        <Badge
+                          variant="outline"
+                          className={
+                            value === "approved"
+                              ? "border-green-500 text-green-700 bg-green-50"
+                              : value === "pending"
+                              ? "border-yellow-500 text-yellow-700 bg-yellow-50"
+                              : value === "processing"
+                              ? "border-blue-500 text-blue-700 bg-blue-50"
+                              : "border-red-500 text-red-700 bg-red-50"
+                          }
+                        >
+                          {value || "Pending"}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: "createdAt",
+                      label: "Date",
+                      render: (value) =>
+                        value
+                          ? new Date(value).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "-",
+                    },
+                  ]}
+                />
               </TabsContent>
 
               <TabsContent value="customers" className="space-y-6">
@@ -850,60 +956,83 @@ function DashboardPageContent() {
                   </CardContent>
                 </Card>
 
-                {/* Recent Customers */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Customers</CardTitle>
-                    <CardDescription>Latest customer registrations</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {dashboardData?.customers?.list?.length ? (
-                        dashboardData.customers.list.map((cust: any) => {
-                          const initials = (cust.name || cust.customerName || "?")
-                            .split(" ")
-                            .filter(Boolean)
-                            .map((n: string) => n[0])
-                            .join("")
-                            .slice(0, 2)
-                            .toUpperCase();
-
-                          return (
-                            <div key={cust._id || cust.customerId || cust.email} className="flex items-center justify-between p-4 border rounded-lg">
-                              <div className="flex items-center space-x-4">
-                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                  <span className="text-blue-600 font-bold">{initials}</span>
-                                </div>
-                                <div>
-                                  <p className="font-medium">{cust.name || cust.customerName}</p>
-                                  <p className="text-sm text-gray-500">
-                                    {cust.email || cust.customerEmail} {cust.phone ? `- ${cust.phone}` : ""}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-bold text-green-600">
-                                  {cust.status ? cust.status.charAt(0).toUpperCase() + cust.status.slice(1) : "Active"}
-                                </p>
-                                {cust.createdAt && (
-                                  <p className="text-xs text-gray-500">
-                                    {new Date(cust.createdAt).toLocaleDateString("en-IN", {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    })}
-                                  </p>
-                                )}
-                              </div>
+                {/* Customers Table with Pagination */}
+                <PaginatedTable
+                  title="All Customers"
+                  description="Complete list of customers with pagination"
+                  data={dashboardData?.customers?.list || []}
+                  itemsPerPage={10}
+                  isLoading={isLoading}
+                  columns={[
+                    {
+                      key: "name",
+                      label: "Name",
+                      render: (value, row) => {
+                        const initials = (value || row.customerName || "?")
+                          .split(" ")
+                          .filter(Boolean)
+                          .map((n: string) => n[0])
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase();
+                        return (
+                          <div className="flex items-center space-x-2">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <span className="text-blue-600 font-bold text-xs">{initials}</span>
                             </div>
-                          );
-                        })
-                      ) : (
-                        <p className="text-sm text-gray-600">No recent customers found.</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                            <span className="font-medium">{value || row.customerName}</span>
+                          </div>
+                        );
+                      },
+                    },
+                    {
+                      key: "email",
+                      label: "Email",
+                      render: (value) => <span className="text-sm">{value}</span>,
+                    },
+                    {
+                      key: "phone",
+                      label: "Phone",
+                      render: (value) => <span className="text-sm">{value || "-"}</span>,
+                    },
+                    {
+                      key: "status",
+                      label: "Status",
+                      render: (value) => (
+                        <Badge
+                          variant="outline"
+                          className={
+                            value === "active"
+                              ? "border-green-500 text-green-700 bg-green-50"
+                              : value === "inactive"
+                              ? "border-gray-500 text-gray-700 bg-gray-50"
+                              : "border-red-500 text-red-700 bg-red-50"
+                          }
+                        >
+                          {value || "Active"}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: "kycStatus",
+                      label: "KYC",
+                      render: (value) => (
+                        <Badge
+                          variant="outline"
+                          className={
+                            value === "verified"
+                              ? "border-green-500 text-green-700 bg-green-50"
+                              : value === "pending"
+                              ? "border-yellow-500 text-yellow-700 bg-yellow-50"
+                              : "border-red-500 text-red-700 bg-red-50"
+                          }
+                        >
+                          {value || "Pending"}
+                        </Badge>
+                      ),
+                    },
+                  ]}
+                />
               </TabsContent>
 
               <TabsContent value="collections" className="space-y-6">
@@ -969,161 +1098,89 @@ function DashboardPageContent() {
                   </CardContent>
                 </Card>
 
-                {/* Recent Collections */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Collections</CardTitle>
-                    <CardDescription>Latest premium payments received</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="font-medium">Term Life Premium</p>
-                            <p className="text-sm text-gray-500">Rajesh Kumar - LIC-2024-0123</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">₹5,000</p>
-                          <p className="text-xs text-gray-500">2 hours ago</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="font-medium">Health Insurance Premium</p>
-                            <p className="text-sm text-gray-500">Priya Sharma - LIC-2024-0124</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">₹3,500</p>
-                          <p className="text-xs text-gray-500">3 hours ago</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="font-medium">Endowment Plan Premium</p>
-                            <p className="text-sm text-gray-500">Amit Singh - LIC-2024-0125</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">₹2,800</p>
-                          <p className="text-xs text-gray-500">5 hours ago</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Collections Table with Pagination */}
+                <PaginatedTable
+                  title="All Collections"
+                  description="Complete list of premium collections with pagination"
+                  data={dashboardData?.payments || []}
+                  itemsPerPage={10}
+                  isLoading={tabLoadingStates.collections}
+                  columns={[
+                    {
+                      key: "collectionId",
+                      label: "Collection ID",
+                      render: (value) => <span className="font-medium">{value || "COL-2024-0000"}</span>,
+                    },
+                    {
+                      key: "customerName",
+                      label: "Customer",
+                    },
+                    {
+                      key: "policyId",
+                      label: "Policy ID",
+                    },
+                    {
+                      key: "amount",
+                      label: "Amount",
+                      render: (value) => <span className="font-semibold text-green-600">₹{value?.toLocaleString("en-IN") || "0"}</span>,
+                    },
+                    {
+                      key: "paymentMethod",
+                      label: "Method",
+                      render: (value) => <Badge variant="outline">{value || "Online"}</Badge>,
+                    },
+                    {
+                      key: "status",
+                      label: "Status",
+                      render: (value) => (
+                        <Badge
+                          variant="outline"
+                          className={
+                            value === "collected"
+                              ? "border-green-500 text-green-700 bg-green-50"
+                              : value === "pending"
+                              ? "border-yellow-500 text-yellow-700 bg-yellow-50"
+                              : "border-red-500 text-red-700 bg-red-50"
+                          }
+                        >
+                          {value || "Pending"}
+                        </Badge>
+                      ),
+                    },
+                  ]}
+                />
               </TabsContent>
 
               <TabsContent value="news" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>LIC & Market News</CardTitle>
-                    <CardDescription>
-                      Latest updates on LIC, Indian insurance sector, and key economic headlines.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {isNewsLoading ? (
-                      <div className="space-y-3">
-                        <div className="h-4 w-32 bg-gray-200 animate-pulse rounded" />
-                        <div className="space-y-2">
-                          {Array.from({ length: 3 }).map((_, i) => (
-                            <div key={i} className="p-3 border rounded-lg space-y-2">
-                              <div className="h-4 w-3/4 bg-gray-200 animate-pulse rounded" />
-                              <div className="h-3 w-1/2 bg-gray-200 animate-pulse rounded" />
-                              <div className="h-3 w-1/3 bg-gray-100 animate-pulse rounded" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : newsError ? (
-                      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                        {newsError}
-                      </div>
-                    ) : news.length === 0 ? (
-                      <p className="text-sm text-gray-600">
-                        No recent news found. Please try again later.
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {news.map((article: any, index: number) => (
-                          <Card
-                            key={`${article.url || article.title || "news"}-${index}`}
-                            className="border border-gray-200 hover:shadow-sm transition-shadow"
-                          >
-                            <CardContent className="p-4 flex flex-col gap-2">
-                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                <h3 className="text-sm sm:text-base font-semibold text-gray-900">
-                                  {article.title || "Untitled article"}
-                                </h3>
-                                <div className="flex items-center gap-2">
-                                  {article.category && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {Array.isArray(article.category)
-                                        ? article.category.join(", ")
-                                        : article.category}
-                                    </Badge>
-                                  )}
-                                  {article.source && (
-                                    <span className="text-[11px] text-gray-500">
-                                      {article.source}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              {article.description && (
-                                <p className="text-xs sm:text-sm text-gray-700 line-clamp-3">
-                                  {article.description}
-                                </p>
-                              )}
-                              <div className="flex items-center justify-between gap-2 mt-1">
-                                <span className="text-[11px] text-gray-500">
-                                  {article.published_at
-                                    ? new Date(article.published_at).toLocaleString("en-IN", {
-                                        dateStyle: "medium",
-                                        timeStyle: "short",
-                                      })
-                                    : "Time not available"}
-                                </span>
-                                {article.url && (
-                                  <a
-                                    href={article.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs font-medium text-blue-600 hover:text-blue-700"
-                                  >
-                                    Read full article
-                                  </a>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                {tabLoadingStates.news ? (
+                  <DashboardSkeleton />
+                ) : (
+                  <NewsVideos />
+                )}
+              </TabsContent>
+
+              <TabsContent value="ai-insights" className="space-y-6">
+                {tabLoadingStates.aiInsights ? (
+                  <DashboardSkeleton />
+                ) : (
+                  <AIInsights />
+                )}
+              </TabsContent>
+
+              <TabsContent value="analytics" className="space-y-6">
+                {tabLoadingStates.analytics ? (
+                  <DashboardSkeleton />
+                ) : (
+                  <AdvancedAnalytics />
+                )}
+              </TabsContent>
+
+              <TabsContent value="monitoring" className="space-y-6">
+                {tabLoadingStates.monitoring ? (
+                  <DashboardSkeleton />
+                ) : (
+                  <InfrastructureMonitoring />
+                )}
               </TabsContent>
             </Tabs>
           </div>

@@ -5,10 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { X } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportsAnalyticsComponent } from "@/components/features/reports-analytics";
+import { PaginatedTable } from "@/components/features/paginated-table";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
 
 function ReportsPageContent() {
   const router = useRouter();
@@ -18,6 +23,10 @@ function ReportsPageContent() {
   const [isClearingNotifications, setIsClearingNotifications] = useState(false);
   const [showProfileSidebar, setShowProfileSidebar] = useState(false);
   const [activeTab, setActiveTab] = useState("existing");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterDateRange, setFilterDateRange] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isReportsLoading, setIsReportsLoading] = useState(false);
   const [notifications, setNotifications] = useState([
     { id: 1, title: "Report Generated", message: "Monthly sales report is ready for download", read: false, time: "1 hour ago" },
     { id: 2, title: "Data Updated", message: "Customer data has been successfully updated", read: false, time: "3 hours ago" },

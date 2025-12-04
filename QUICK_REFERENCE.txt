@@ -1,0 +1,259 @@
+================================================================================
+                         QUICK REFERENCE GUIDE
+================================================================================
+
+LOGIN PAGE FEATURES
+================================================================================
+
+1. INPUT VALIDATION
+   Location: app/page.tsx (validateForm function)
+   
+   Email Validation:
+   - Required field
+   - Must match email format: user@domain.com
+   - Error: "Please enter a valid email address"
+   
+   Password Validation:
+   - Required field
+   - Minimum 6 characters
+   - Error: "Password must be at least 6 characters"
+
+2. RATE LIMITING
+   Location: app/page.tsx (checkRateLimit & recordLoginAttempt functions)
+   
+   Rules:
+   - Max 5 attempts per 15 minutes
+   - Countdown timer shows remaining time
+   - Form disabled during rate limit
+   - Automatic reset after 15 minutes
+   
+   Storage: localStorage key "login_attempts"
+
+3. REMEMBER ME
+   Location: app/page.tsx (rememberMe state)
+   
+   How it works:
+   - Checkbox saves email to localStorage
+   - Email auto-loads on page refresh
+   - Stored as: localStorage.getItem("remembered_email")
+   - Clears if checkbox unchecked
+
+4. ERROR MESSAGES
+   Location: app/page.tsx (errors state)
+   
+   Display:
+   - Inline below each field
+   - Red border on invalid fields
+   - Alert component for API errors
+   - Success alert on login
+
+5. LOADING STATE
+   Location: app/page.tsx (isLoading state)
+   
+   Features:
+   - Spinner animation in button
+   - "Signing in..." text
+   - Form disabled during loading
+   - Smooth transitions
+
+================================================================================
+
+DASHBOARD PAGINATION
+================================================================================
+
+1. PAGINATED TABLE COMPONENT
+   Location: components/features/paginated-table.tsx
+   
+   Usage:
+   <PaginatedTable
+     title="Table Title"
+     description="Optional description"
+     data={arrayOfData}
+     itemsPerPage={10}
+     isLoading={false}
+     columns={[
+       { key: "fieldName", label: "Display Name" },
+       { key: "status", label: "Status", render: (value) => <Badge>{value}</Badge> }
+     ]}
+   />
+
+2. PAGINATION CONTROLS
+   Location: components/ui/pagination.tsx
+   
+   Features:
+   - Previous/Next buttons
+   - Page number buttons
+   - Ellipsis for large page counts
+   - Shows current range
+   - Disabled state for first/last page
+
+3. LOADING SKELETON
+   Location: components/features/dashboard-skeleton.tsx
+   
+   Usage:
+   - Automatically shown during data load
+   - Matches dashboard layout
+   - Animated pulse effect
+   - Smooth transition to content
+
+4. IMPLEMENTED TABLES
+   
+   Policies Table:
+   - Location: app/dashboard/page.tsx (policies tab)
+   - Columns: Policy ID, Type, Customer, Premium, Status, Created
+   - Items per page: 10
+   - Status badges with color coding
+   
+   Customers Table:
+   - Location: app/dashboard/page.tsx (customers tab)
+   - Columns: Name, Email, Phone, Status, KYC Status
+   - Items per page: 10
+   - Customer avatars with initials
+   - Status badges with color coding
+
+================================================================================
+
+COMPONENT IMPORTS
+================================================================================
+
+For Login Page:
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+
+For Dashboard:
+import { PaginatedTable } from "@/components/features/paginated-table";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
+================================================================================
+
+STYLING CLASSES
+================================================================================
+
+Error States:
+- Border: border-red-500
+- Ring: focus:ring-red-100
+- Background: bg-red-50
+- Text: text-red-600
+
+Success States:
+- Border: border-green-200
+- Background: bg-green-50
+- Text: text-green-800
+
+Status Badges:
+- Active: border-green-500 text-green-700 bg-green-50
+- Pending: border-yellow-500 text-yellow-700 bg-yellow-50
+- Inactive: border-gray-500 text-gray-700 bg-gray-50
+- Suspended: border-red-500 text-red-700 bg-red-50
+
+Loading:
+- Skeleton: animate-pulse rounded-md bg-gray-200
+
+================================================================================
+
+TESTING SCENARIOS
+================================================================================
+
+LOGIN PAGE:
+
+1. Invalid Email:
+   - Enter: "notanemail"
+   - Expected: Error message "Please enter a valid email address"
+
+2. Short Password:
+   - Enter: "12345"
+   - Expected: Error message "Password must be at least 6 characters"
+
+3. Rate Limiting:
+   - Try 5 failed logins
+   - Expected: "Too many login attempts. Please try again in X seconds"
+   - Button shows countdown
+
+4. Remember Me:
+   - Check "Remember me"
+   - Login successfully
+   - Refresh page
+   - Expected: Email field pre-filled
+
+5. Loading State:
+   - Click login with valid credentials
+   - Expected: Spinner animation, "Signing in..." text
+
+DASHBOARD:
+
+1. Pagination Navigation:
+   - Click "Next" button
+   - Expected: Shows next 10 items
+   - Page counter updates
+
+2. Page Numbers:
+   - Click page "2"
+   - Expected: Shows items 11-20
+   - Page "2" highlighted
+
+3. Loading Skeleton:
+   - Refresh dashboard
+   - Expected: Skeleton loaders appear briefly
+   - Smooth transition to content
+
+4. Empty State:
+   - If no data
+   - Expected: "No data available" message
+
+================================================================================
+
+TROUBLESHOOTING
+================================================================================
+
+Issue: Rate limit not working
+Solution: Check localStorage for "login_attempts" key
+         Clear localStorage and try again
+
+Issue: Remember me not working
+Solution: Check if localStorage is enabled
+         Verify "remembered_email" key in localStorage
+
+Issue: Pagination not showing
+Solution: Ensure data array has more than itemsPerPage items
+         Check if PaginatedTable component is imported
+
+Issue: Validation not triggering
+Solution: Verify validateForm() is called before API request
+         Check error state is being set
+
+Issue: Loading skeleton not showing
+Solution: Ensure isLoading prop is true
+         Check DashboardSkeleton component is imported
+
+================================================================================
+
+PERFORMANCE TIPS
+================================================================================
+
+1. Pagination reduces DOM elements (10 items vs 100+)
+2. Skeleton loaders improve perceived performance
+3. Rate limiting prevents server overload
+4. Input validation reduces invalid API calls
+5. Remember me reduces user friction
+
+================================================================================
+
+SECURITY NOTES
+================================================================================
+
+1. Rate limiting prevents brute force attacks
+2. Email validation prevents invalid submissions
+3. Password validation enforces minimum strength
+4. Remember me stores only email (no passwords)
+5. localStorage is client-side only (use secure tokens in production)
+
+================================================================================

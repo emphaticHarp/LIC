@@ -12,9 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { X } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import { CommissionTrackingComponent } from "@/components/features/commission-tracking";
+import { PaginatedTable } from "@/components/features/paginated-table";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
 
 function CommissionPageContent() {
   const router = useRouter();
@@ -26,6 +29,12 @@ function CommissionPageContent() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth().toString());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [activeTab, setActiveTab] = useState("overview");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterDateRange, setFilterDateRange] = useState("all");
+  const [filterAmountRange, setFilterAmountRange] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isCommissionsLoading, setIsCommissionsLoading] = useState(false);
 
   const [notifications, setNotifications] = useState([
     { id: 1, title: "Commission Credited", message: "₹25,000 commission credited for November 2024", read: false, time: "2 hours ago" },
@@ -338,36 +347,126 @@ function CommissionPageContent() {
               </TabsContent>
 
               <TabsContent value="policies" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Policy Commission Details</CardTitle>
-                    <CardDescription>Commission earned from individual policies</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ScrollArea className="h-[400px]">
-                      <div className="space-y-4">
-                        {policyCommissions.map((policy) => (
-                          <div key={policy.id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex items-center space-x-4">
-                              <div>
-                                <p className="font-medium">{policy.customerName}</p>
-                                <p className="text-sm text-gray-500">{policy.policyType}</p>
-                                <p className="text-xs text-gray-400">{policy.date}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-medium">₹{policy.commission.toLocaleString()}</p>
-                              <p className="text-sm text-gray-500">Premium: ₹{policy.premium.toLocaleString()}</p>
-                              <Badge variant={policy.status === "Paid" ? "default" : "secondary"}>
-                                {policy.status}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
+                {/* Search and Filters */}
+                <Card className="mb-6">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <Input
+                        placeholder="Search by customer name or policy ID..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger className="w-full md:w-48">
+                          <SelectValue placeholder="Filter by status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="Paid">Paid</SelectItem>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={filterDateRange} onValueChange={setFilterDateRange}>
+                        <SelectTrigger className="w-full md:w-48">
+                          <SelectValue placeholder="Filter by date" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Dates</SelectItem>
+                          <SelectItem value="30days">Last 30 Days</SelectItem>
+                          <SelectItem value="90days">Last 90 Days</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={filterAmountRange} onValueChange={setFilterAmountRange}>
+                        <SelectTrigger className="w-full md:w-48">
+                          <SelectValue placeholder="Filter by amount" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Amounts</SelectItem>
+                          <SelectItem value="low">Low (&lt;₹2K)</SelectItem>
+                          <SelectItem value="medium">Medium (₹2K-₹5K)</SelectItem>
+                          <SelectItem value="high">High (&gt;₹5K)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setSearchTerm("");
+                          setFilterStatus("all");
+                          setFilterDateRange("all");
+                          setFilterAmountRange("all");
+                          setCurrentPage(1);
+                        }}
+                        className="whitespace-nowrap"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Clear
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
+
+                {/* Policy Commissions Table with Pagination */}
+                <PaginatedTable
+                  title="Policy Commission Details"
+                  description="Commission earned from individual policies"
+                  data={policyCommissions.filter(policy => {
+                    const matchesSearch = policy.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        policy.id.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesStatus = filterStatus === "all" || policy.status === filterStatus;
+                    let matchesAmount = true;
+                    if (filterAmountRange !== "all") {
+                      if (filterAmountRange === "low") matchesAmount = policy.commission < 2000;
+                      else if (filterAmountRange === "medium") matchesAmount = policy.commission >= 2000 && policy.commission < 5000;
+                      else if (filterAmountRange === "high") matchesAmount = policy.commission >= 5000;
+                    }
+                    return matchesSearch && matchesStatus && matchesAmount;
+                  })}
+                  itemsPerPage={10}
+                  isLoading={isCommissionsLoading}
+                  columns={[
+                    {
+                      key: "id",
+                      label: "Policy ID",
+                      render: (value) => <span className="font-medium">{value}</span>,
+                    },
+                    {
+                      key: "customerName",
+                      label: "Customer",
+                    },
+                    {
+                      key: "policyType",
+                      label: "Type",
+                      render: (value) => <Badge variant="outline">{value}</Badge>,
+                    },
+                    {
+                      key: "premium",
+                      label: "Premium",
+                      render: (value) => <span>₹{value.toLocaleString()}</span>,
+                    },
+                    {
+                      key: "commission",
+                      label: "Commission",
+                      render: (value) => <span className="font-semibold text-green-600">₹{value.toLocaleString()}</span>,
+                    },
+                    {
+                      key: "status",
+                      label: "Status",
+                      render: (value) => (
+                        <Badge
+                          variant="outline"
+                          className={
+                            value === "Paid"
+                              ? "border-green-500 text-green-700 bg-green-50"
+                              : "border-yellow-500 text-yellow-700 bg-yellow-50"
+                          }
+                        >
+                          {value}
+                        </Badge>
+                      ),
+                    },
+                  ]}
+                />
               </TabsContent>
 
               <TabsContent value="incentives" className="space-y-6">

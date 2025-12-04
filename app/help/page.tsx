@@ -35,6 +35,14 @@ function HelpPageContent() {
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
+  
+  // Pagination states
+  const [faqCurrentPage, setFaqCurrentPage] = useState(1);
+  const [articlesCurrentPage, setArticlesCurrentPage] = useState(1);
+  const [ticketsCurrentPage, setTicketsCurrentPage] = useState(1);
+  const [ticketSearchQuery, setTicketSearchQuery] = useState("");
+  const [ticketStatusFilter, setTicketStatusFilter] = useState("all");
+  const itemsPerPage = 5;
 
   // Ticket form data
   const [ticketData, setTicketData] = useState({
@@ -268,6 +276,31 @@ function HelpPageContent() {
     const matchesCategory = selectedCategory === "all" || faq.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  // Pagination calculations for FAQs
+  const faqTotalPages = Math.ceil(filteredFAQs.length / itemsPerPage);
+  const faqStartIndex = (faqCurrentPage - 1) * itemsPerPage;
+  const faqEndIndex = faqStartIndex + itemsPerPage;
+  const paginatedFAQs = filteredFAQs.slice(faqStartIndex, faqEndIndex);
+
+  // Pagination calculations for Articles
+  const articlesTotalPages = Math.ceil(helpArticles.length / itemsPerPage);
+  const articlesStartIndex = (articlesCurrentPage - 1) * itemsPerPage;
+  const articlesEndIndex = articlesStartIndex + itemsPerPage;
+  const paginatedArticles = helpArticles.slice(articlesStartIndex, articlesEndIndex);
+
+  // Pagination calculations for Tickets
+  const filteredTickets = supportTickets.filter(ticket => {
+    const matchesSearch = ticket.subject.toLowerCase().includes(ticketSearchQuery.toLowerCase()) ||
+                          ticket.id.toLowerCase().includes(ticketSearchQuery.toLowerCase());
+    const matchesStatus = ticketStatusFilter === "all" || ticket.status === ticketStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const ticketsTotalPages = Math.ceil(filteredTickets.length / itemsPerPage);
+  const ticketsStartIndex = (ticketsCurrentPage - 1) * itemsPerPage;
+  const ticketsEndIndex = ticketsStartIndex + itemsPerPage;
+  const paginatedTickets = filteredTickets.slice(ticketsStartIndex, ticketsEndIndex);
 
   const handleViewArticle = (article: any) => {
     setSelectedArticle(article);
@@ -509,7 +542,7 @@ function HelpPageContent() {
                 </div>
 
                 <div className="space-y-3">
-                  {filteredFAQs.map((faq) => (
+                  {paginatedFAQs.map((faq) => (
                     <Card key={faq.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between">
@@ -535,6 +568,46 @@ function HelpPageContent() {
                     </Card>
                   ))}
                 </div>
+
+                {/* FAQ Pagination */}
+                {faqTotalPages > 1 && (
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                    <div className="text-sm text-gray-600">
+                      Showing {faqStartIndex + 1} to {Math.min(faqEndIndex, filteredFAQs.length)} of {filteredFAQs.length} FAQs
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFaqCurrentPage(Math.max(1, faqCurrentPage - 1))}
+                        disabled={faqCurrentPage === 1}
+                      >
+                        ← Previous
+                      </Button>
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: faqTotalPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={faqCurrentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setFaqCurrentPage(page)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFaqCurrentPage(Math.min(faqTotalPages, faqCurrentPage + 1))}
+                        disabled={faqCurrentPage === faqTotalPages}
+                      >
+                        Next →
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -546,7 +619,7 @@ function HelpPageContent() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {helpArticles.map((article) => (
+                  {paginatedArticles.map((article) => (
                     <Card key={article.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleViewArticle(article)}>
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-2">
@@ -565,6 +638,46 @@ function HelpPageContent() {
                     </Card>
                   ))}
                 </div>
+
+                {/* Articles Pagination */}
+                {articlesTotalPages > 1 && (
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                    <div className="text-sm text-gray-600">
+                      Showing {articlesStartIndex + 1} to {Math.min(articlesEndIndex, helpArticles.length)} of {helpArticles.length} articles
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setArticlesCurrentPage(Math.max(1, articlesCurrentPage - 1))}
+                        disabled={articlesCurrentPage === 1}
+                      >
+                        ← Previous
+                      </Button>
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: articlesTotalPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={articlesCurrentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setArticlesCurrentPage(page)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setArticlesCurrentPage(Math.min(articlesTotalPages, articlesCurrentPage + 1))}
+                        disabled={articlesCurrentPage === articlesTotalPages}
+                      >
+                        Next →
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -574,7 +687,35 @@ function HelpPageContent() {
                 <CardTitle>Your Support Tickets</CardTitle>
                 <CardDescription>Track the status of your support requests</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {/* Ticket Filters */}
+                <div className="flex flex-col md:flex-row gap-4">
+                  <Input
+                    placeholder="Search by ticket ID or subject..."
+                    value={ticketSearchQuery}
+                    onChange={(e) => {
+                      setTicketSearchQuery(e.target.value);
+                      setTicketsCurrentPage(1);
+                    }}
+                    className="flex-1"
+                  />
+                  <Select value={ticketStatusFilter} onValueChange={(value) => {
+                    setTicketStatusFilter(value);
+                    setTicketsCurrentPage(1);
+                  }}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="Open">Open</SelectItem>
+                      <SelectItem value="In Progress">In Progress</SelectItem>
+                      <SelectItem value="Resolved">Resolved</SelectItem>
+                      <SelectItem value="Closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -589,7 +730,7 @@ function HelpPageContent() {
                       </tr>
                     </thead>
                     <tbody>
-                      {supportTickets.map((ticket) => (
+                      {paginatedTickets.map((ticket) => (
                         <tr key={ticket.id} className="border-b hover:bg-gray-50">
                           <td className="p-2 font-medium">{ticket.id}</td>
                           <td className="p-2">{ticket.subject}</td>
@@ -615,6 +756,46 @@ function HelpPageContent() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Tickets Pagination */}
+                {ticketsTotalPages > 1 && (
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <div className="text-sm text-gray-600">
+                      Showing {ticketsStartIndex + 1} to {Math.min(ticketsEndIndex, filteredTickets.length)} of {filteredTickets.length} tickets
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTicketsCurrentPage(Math.max(1, ticketsCurrentPage - 1))}
+                        disabled={ticketsCurrentPage === 1}
+                      >
+                        ← Previous
+                      </Button>
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: ticketsTotalPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={ticketsCurrentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setTicketsCurrentPage(page)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTicketsCurrentPage(Math.min(ticketsTotalPages, ticketsCurrentPage + 1))}
+                        disabled={ticketsCurrentPage === ticketsTotalPages}
+                      >
+                        Next →
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
