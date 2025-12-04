@@ -390,8 +390,8 @@ function CustomersPageContent() {
             {/* Search and Filters */}
             <Card className="mb-6">
               <CardContent className="p-4">
-                <div className="flex flex-col lg:flex-row gap-4">
-                  <div className="flex-1">
+                <div className="space-y-4">
+                  <div>
                     <Input
                       placeholder="Search by name, policy ID, phone number, email..."
                       value={customerSearchTerm}
@@ -399,99 +399,102 @@ function CustomersPageContent() {
                       className="w-full"
                     />
                   </div>
-                  <Select value={customerFilterStatus} onValueChange={setCustomerFilterStatus}>
-                    <SelectTrigger className="w-full lg:w-48">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
-                      <SelectItem value="Suspended">Suspended</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={customerFilterType} onValueChange={setCustomerFilterType}>
-                    <SelectTrigger className="w-full lg:w-48">
-                      <SelectValue placeholder="Filter by type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="Life Insurance">Life Insurance</SelectItem>
-                      <SelectItem value="Health Insurance">Health Insurance</SelectItem>
-                      <SelectItem value="Vehicle Insurance">Vehicle Insurance</SelectItem>
-                      <SelectItem value="Home Insurance">Home Insurance</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={customerFilterPremium} onValueChange={setCustomerFilterPremium}>
-                    <SelectTrigger className="w-full lg:w-48">
-                      <SelectValue placeholder="Premium range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Premiums</SelectItem>
-                      <SelectItem value="0-10000">₹0 - ₹10,000</SelectItem>
-                      <SelectItem value="10000-25000">₹10,000 - ₹25,000</SelectItem>
-                      <SelectItem value="25000-50000">₹25,000 - ₹50,000</SelectItem>
-                      <SelectItem value="50000+">₹50,000+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={customerFilterOfficer} onValueChange={setCustomerFilterOfficer}>
-                    <SelectTrigger className="w-full lg:w-48">
-                      <SelectValue placeholder="Filter by officer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Officers</SelectItem>
-                      <SelectItem value="Rajesh Kumar">Rajesh Kumar</SelectItem>
-                      <SelectItem value="Sneha Reddy">Sneha Reddy</SelectItem>
-                      <SelectItem value="Amit Singh">Amit Singh</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={customerFilterKYC} onValueChange={setCustomerFilterKYC}>
-                    <SelectTrigger className="w-full lg:w-48">
-                      <SelectValue placeholder="Filter by KYC" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All KYC Status</SelectItem>
-                      <SelectItem value="verified">Verified</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={customerFilterDateRange} onValueChange={setCustomerFilterDateRange}>
-                    <SelectTrigger className="w-full lg:w-48">
-                      <SelectValue placeholder="Filter by date" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Dates</SelectItem>
-                      <SelectItem value="30days">Last 30 Days</SelectItem>
-                      <SelectItem value="90days">Last 90 Days</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      setCustomerSearchTerm("");
-                      setCustomerFilterStatus("all");
-                      setCustomerFilterType("all");
-                      setCustomerFilterPremium("all");
-                      setCustomerFilterOfficer("all");
-                      setCustomerFilterKYC("all");
-                      setCustomerFilterDateRange("all");
-                      setCurrentPage(1);
-                    }}
-                    className="whitespace-nowrap"
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Clear
-                  </Button>
-                  <Dialog open={isAddCustomerDialogOpen} onOpenChange={setIsAddCustomerDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button onClick={handleAddCustomer}>
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Add Customer
-                      </Button>
-                    </DialogTrigger>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <Select value={customerFilterStatus} onValueChange={setCustomerFilterStatus}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                        <SelectItem value="Suspended">Suspended</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={customerFilterType} onValueChange={setCustomerFilterType}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Filter by type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="Life Insurance">Life Insurance</SelectItem>
+                        <SelectItem value="Health Insurance">Health Insurance</SelectItem>
+                        <SelectItem value="Vehicle Insurance">Vehicle Insurance</SelectItem>
+                        <SelectItem value="Home Insurance">Home Insurance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={customerFilterPremium} onValueChange={setCustomerFilterPremium}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Premium range" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Premiums</SelectItem>
+                        <SelectItem value="0-10000">₹0 - ₹10,000</SelectItem>
+                        <SelectItem value="10000-25000">₹10,000 - ₹25,000</SelectItem>
+                        <SelectItem value="25000-50000">₹25,000 - ₹50,000</SelectItem>
+                        <SelectItem value="50000+">₹50,000+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={customerFilterOfficer} onValueChange={setCustomerFilterOfficer}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Filter by officer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Officers</SelectItem>
+                        <SelectItem value="Rajesh Kumar">Rajesh Kumar</SelectItem>
+                        <SelectItem value="Sneha Reddy">Sneha Reddy</SelectItem>
+                        <SelectItem value="Amit Singh">Amit Singh</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={customerFilterKYC} onValueChange={setCustomerFilterKYC}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Filter by KYC" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All KYC Status</SelectItem>
+                        <SelectItem value="verified">Verified</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={customerFilterDateRange} onValueChange={setCustomerFilterDateRange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Filter by date" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Dates</SelectItem>
+                        <SelectItem value="30days">Last 30 Days</SelectItem>
+                        <SelectItem value="90days">Last 90 Days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        setCustomerSearchTerm("");
+                        setCustomerFilterStatus("all");
+                        setCustomerFilterType("all");
+                        setCustomerFilterPremium("all");
+                        setCustomerFilterOfficer("all");
+                        setCustomerFilterKYC("all");
+                        setCustomerFilterDateRange("all");
+                        setCurrentPage(1);
+                      }}
+                      className="w-full"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Clear
+                    </Button>
+                  </div>
+                  <div className="flex gap-3">
+                    <Dialog open={isAddCustomerDialogOpen} onOpenChange={setIsAddCustomerDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button onClick={handleAddCustomer} className="w-full sm:w-auto">
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Add Customer
+                        </Button>
+                      </DialogTrigger>
                     <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Add New Customer</DialogTitle>
@@ -751,7 +754,8 @@ function CustomersPageContent() {
                         </DialogFooter>
                       </form>
                     </DialogContent>
-                  </Dialog>
+                    </Dialog>
+                  </div>
                 </div>
               </CardContent>
             </Card>

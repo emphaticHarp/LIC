@@ -87,14 +87,14 @@ export function PaginatedTable({
         {description && <CardDescription className="text-sm">{description}</CardDescription>}
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        <div className="w-full">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200">
                 {columns.map((column) => (
                   <th
                     key={column.key}
-                    className="text-left py-3 px-4 font-semibold text-gray-700"
+                    className="text-left py-3 px-2 sm:px-4 font-semibold text-gray-700 text-xs sm:text-sm"
                   >
                     {column.label}
                   </th>
@@ -106,7 +106,7 @@ export function PaginatedTable({
                 Array.from({ length: itemsPerPage }).map((_, idx) => (
                   <tr key={idx} className="border-b border-gray-100">
                     {columns.map((column) => (
-                      <td key={column.key} className="py-3 px-4">
+                      <td key={column.key} className="py-3 px-2 sm:px-4">
                         <Skeleton className="h-4 w-24" />
                       </td>
                     ))}
@@ -114,7 +114,7 @@ export function PaginatedTable({
                 ))
               ) : currentData.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="py-8 px-4 text-center text-gray-500">
+                  <td colSpan={columns.length} className="py-8 px-2 sm:px-4 text-center text-gray-500">
                     No data available
                   </td>
                 </tr>
@@ -122,7 +122,7 @@ export function PaginatedTable({
                 currentData.map((row, idx) => (
                   <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
                     {columns.map((column) => (
-                      <td key={column.key} className="py-3 px-4">
+                      <td key={column.key} className="py-3 px-2 sm:px-4 text-xs sm:text-sm truncate">
                         {column.render
                           ? column.render(row[column.key], row)
                           : row[column.key]}
