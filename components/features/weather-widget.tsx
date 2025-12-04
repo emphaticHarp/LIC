@@ -71,7 +71,7 @@ export function WeatherWidget() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
-  const API_KEY = "61113cc0e8434935b0571556250312";
+  const API_KEY = process.env.NEXT_PUBLIC_WEATHER_API_KEY || "61113cc0e8434935b0571556250312";
   const LOCATION = "Agartala";
 
   useEffect(() => {
@@ -88,7 +88,7 @@ export function WeatherWidget() {
 
       // Current weather
       const currentResponse = await fetch(
-        `http://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${LOCATION}&aqi=no`
+        `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${LOCATION}&aqi=no`
       );
       
       if (!currentResponse.ok) {
@@ -99,7 +99,7 @@ export function WeatherWidget() {
 
       // Forecast (3 days)
       const forecastResponse = await fetch(
-        `http://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${LOCATION}&days=3&aqi=no&alerts=no`
+        `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${LOCATION}&days=3&aqi=no&alerts=no`
       );
 
       if (!forecastResponse.ok) {
