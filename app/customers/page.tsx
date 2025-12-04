@@ -760,6 +760,14 @@ function CustomersPageContent() {
               </CardContent>
             </Card>
 
+            {/* Tabs for Customers and Loans */}
+            <Tabs defaultValue="customers" className="w-full mb-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="customers">👥 Customers</TabsTrigger>
+                <TabsTrigger value="loans">💰 Loans</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="customers">
             {/* Customer Table with Pagination */}
             <PaginatedTable
               title="All Customers"
@@ -819,6 +827,12 @@ function CustomersPageContent() {
                 },
               ]}
             />
+              </TabsContent>
+
+              <TabsContent value="loans">
+                <LoansBankingSection />
+              </TabsContent>
+            </Tabs>
 
             {/* Old Table - Commented Out */}
             {false && (
