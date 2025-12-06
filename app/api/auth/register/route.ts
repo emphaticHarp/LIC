@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongoose';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,6 +37,10 @@ export async function POST(request: NextRequest) {
     console.log('Hashing password...');
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
     // Create user
     console.log('Creating user...');
     const user = new User({
@@ -43,6 +48,9 @@ export async function POST(request: NextRequest) {
       password: hashedPassword,
       name,
       role,
+      isVerified: false,
+      verificationToken,
+      verificationTokenExpiry,
       profile: {
         firstName: name.split(' ')[0],
         lastName: name.split(' ')[1] || '',
@@ -53,17 +61,23 @@ export async function POST(request: NextRequest) {
     await user.save();
     console.log('User created successfully:', email);
 
-    // Return user data (excluding password)
+    // Return user data with verification token
     const userResponse = {
       id: user._id,
       email: user.email,
       name: user.name,
       role: user.role,
+      isVerified: user.isVerified,
+      verificationToken: verificationToken,
       profile: user.profile
     };
 
     return NextResponse.json(
-      { message: 'User created successfully', user: userResponse },
+      { 
+        message: 'User created successfully. Please verify your email.',
+        user: userResponse,
+        verificationToken: verificationToken
+      },
       { status: 201 }
     );
 
