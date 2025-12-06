@@ -3,32 +3,40 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import Swal from "sweetalert2";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft, Lock, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, ArrowLeft, Lock, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 function ResetPasswordPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
-    const phoneParam = searchParams.get("phone");
-    if (phoneParam) {
-      setPhoneNumber(decodeURIComponent(phoneParam));
+    const emailParam = searchParams.get("email");
+    if (emailParam) {
+      setEmail(decodeURIComponent(emailParam));
     } else {
-      // If no phone parameter, redirect back to forgot password
+      // If no email parameter, redirect back to forgot password
       router.push("/forgot-password");
     }
   }, [searchParams, router]);
@@ -52,37 +60,32 @@ function ResetPasswordPageContent() {
     }
 
     try {
-      // In a real app, you would call your backend API to reset the password
-      // For demo purposes, we'll simulate the reset process
-      
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
-      
-      setSuccess(true);
-      
-      await Swal.fire({
-        icon: 'success',
-        title: 'Password Reset Successful!',
-        text: 'Your password has been reset successfully. Redirecting to login...',
-        timer: 3000,
-        timerProgressBar: true,
-        showConfirmButton: false
+      // Call API to reset password
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email, 
+          newPassword 
+        }),
       });
-      
-      // Redirect to login page
-      setTimeout(() => {
-        router.push("/");
-      }, 3000);
+
+      const data = await response.json();
+
+      if (data.success) {
+        setShowSuccessModal(true);
+        setTimeout(() => {
+          router.push("/");
+        }, 2000);
+      } else {
+        setErrorMessage(data.error || "Failed to reset password.");
+        setShowErrorModal(true);
+      }
       
     } catch (err: any) {
       console.error("Password reset error:", err);
-      setError(err.message || "Failed to reset password. Please try again.");
-      
-      await Swal.fire({
-        icon: 'error',
-        title: 'Password Reset Failed',
-        text: err.message || "Failed to reset password. Please try again.",
-        confirmButtonColor: '#d33'
-      });
+      setErrorMessage(err.message || "Failed to reset password. Please try again.");
+      setShowErrorModal(true);
     } finally {
       setIsLoading(false);
     }
@@ -124,30 +127,50 @@ function ResetPasswordPageContent() {
           </CardHeader>
           
           <CardContent>
-            {phoneNumber && (
+            {/* Error Modal */}
+            <Dialog open={showErrorModal} onOpenChange={setShowErrorModal}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-red-600">
+                    <AlertCircle className="h-5 w-5" />
+                    Error
+                  </DialogTitle>
+                </DialogHeader>
+                <DialogDescription className="text-gray-700">
+                  {errorMessage}
+                </DialogDescription>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button
+                    onClick={() => setShowErrorModal(false)}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Success Modal */}
+            <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-green-600">
+                    <CheckCircle2 className="h-5 w-5" />
+                    Success
+                  </DialogTitle>
+                </DialogHeader>
+                <DialogDescription className="text-gray-700">
+                  Your password has been reset successfully. Redirecting to login...
+                </DialogDescription>
+              </DialogContent>
+            </Dialog>
+
+            {email && (
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                 <p className="text-sm text-blue-800">
-                  <strong>Phone:</strong> {phoneNumber}
+                  <strong>Email:</strong> {email}
                 </p>
               </div>
-            )}
-
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {success && (
-              <Alert className="mb-4 bg-green-50 border-green-200">
-                <AlertCircle className="h-4 w-4 text-green-600" />
-                <AlertTitle className="text-green-900">Success!</AlertTitle>
-                <AlertDescription className="text-green-800">
-                  Password reset successful! Redirecting to login...
-                </AlertDescription>
-              </Alert>
             )}
 
             <form onSubmit={handleResetPassword} className="space-y-4">

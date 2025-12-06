@@ -9,28 +9,71 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { AlertCircle, ArrowLeft, Phone } from "lucide-react";
+import { AlertCircle, ArrowLeft, Mail, CheckCircle2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [verificationCode, setVerificationCode] = useState("");
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
   const [showOTP, setShowOTP] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    // Simulate loading
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Just show OTP screen without any real functionality
-    setShowOTP(true);
-    setIsLoading(false);
+    try {
+      // First check if email exists
+      const checkResponse = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const checkData = await checkResponse.json();
+
+      if (!checkData.exists) {
+        setErrorMessage("Email not registered. Please check and try again.");
+        setShowErrorModal(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // Email exists, send OTP
+      const response = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email, 
+          purpose: "PASSWORD_RESET" 
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setShowOTP(true);
+      } else {
+        setErrorMessage(data.error || "Failed to send OTP");
+        setShowErrorModal(true);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || "Failed to send OTP");
+      setShowErrorModal(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
@@ -38,17 +81,31 @@ export default function ForgotPasswordPage() {
     setError("");
     setIsLoading(true);
 
-    // Simulate loading
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Just show success and redirect
-    setSuccess(true);
-    setIsLoading(false);
-    
-    // Redirect to reset password page
-    setTimeout(() => {
-      router.push(`/reset-password?phone=${encodeURIComponent(phoneNumber)}`);
-    }, 2000);
+    try {
+      const response = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email, 
+          otp,
+          purpose: "PASSWORD_RESET"
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        router.push(`/reset-password?email=${encodeURIComponent(email)}`);
+      } else {
+        setErrorMessage(data.error || "Failed to verify OTP");
+        setShowErrorModal(true);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || "Failed to verify OTP");
+      setShowErrorModal(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -83,49 +140,54 @@ export default function ForgotPasswordPage() {
             </div>
             <CardDescription className="text-sm">
               {!showOTP 
-                ? "Enter your phone number to receive a verification code"
-                : "Enter the 6-digit verification code sent to your phone"
+                ? "Enter your email to receive a verification code"
+                : "Enter the 6-digit OTP sent to your email"
               }
             </CardDescription>
           </CardHeader>
           
           <CardContent>
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {success && (
-              <Alert className="mb-4 bg-green-50 border-green-200">
-                <AlertCircle className="h-4 w-4 text-green-600" />
-                <AlertTitle className="text-green-900">Success!</AlertTitle>
-                <AlertDescription className="text-green-800">
-                  Phone verified successfully!
-                </AlertDescription>
-              </Alert>
-            )}
+            {/* Error Modal */}
+            <Dialog open={showErrorModal} onOpenChange={setShowErrorModal}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-red-600">
+                    <AlertCircle className="h-5 w-5" />
+                    Error
+                  </DialogTitle>
+                </DialogHeader>
+                <DialogDescription className="text-gray-700">
+                  {errorMessage}
+                </DialogDescription>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button
+                    onClick={() => setShowErrorModal(false)}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             {!showOTP ? (
               <form onSubmit={handleSendOTP} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="email">Email Address</Label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-5 w-5 text-blue-600" />
+                    <Mail className="absolute left-3 top-3 h-5 w-5 text-blue-600" />
                     <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="Enter your phone number"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email address"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
                       required
                     />
                   </div>
                   <p className="text-sm text-gray-500">
-                    Enter your 10-digit mobile number (India)
+                    We'll send a 6-digit OTP to your email
                   </p>
                 </div>
 
@@ -144,8 +206,8 @@ export default function ForgotPasswordPage() {
                   <div className="flex justify-center">
                     <InputOTP
                       maxLength={6}
-                      value={verificationCode}
-                      onChange={(value) => setVerificationCode(value)}
+                      value={otp}
+                      onChange={(value) => setOtp(value)}
                     >
                       <InputOTPGroup>
                         <InputOTPSlot index={0} />
@@ -158,10 +220,10 @@ export default function ForgotPasswordPage() {
                     </InputOTP>
                   </div>
                   <div className="text-center text-sm text-gray-500">
-                    {verificationCode === "" ? (
-                      <>Enter the 6-digit code sent to {phoneNumber}</>
+                    {otp === "" ? (
+                      <>Enter the 6-digit code sent to {email}</>
                     ) : (
-                      <>You entered: {verificationCode}</>
+                      <>You entered: {otp}</>
                     )}
                   </div>
                 </div>
@@ -170,7 +232,7 @@ export default function ForgotPasswordPage() {
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={isLoading || verificationCode.length !== 6}
+                    disabled={isLoading || otp.length !== 6}
                   >
                     {isLoading ? "Verifying..." : "Verify OTP"}
                   </Button>
@@ -181,11 +243,11 @@ export default function ForgotPasswordPage() {
                     className="w-full"
                     onClick={() => {
                       setShowOTP(false);
-                      setVerificationCode("");
+                      setOtp("");
                       setError("");
                     }}
                   >
-                    Back to Phone Number
+                    Back to Email
                   </Button>
                 </div>
               </form>
