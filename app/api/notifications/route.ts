@@ -1,119 +1,113 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db';
-import mongoose from 'mongoose';
+import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
+import { Notification } from "@/models/Notification";
 
-const NotificationSchema = new mongoose.Schema(
-  {
-    userId: String,
-    email: String,
-    title: String,
-    message: String,
-    type: {
-      type: String,
-      enum: ['info', 'success', 'warning', 'error', 'system'],
-      default: 'info',
-    },
-    read: { type: Boolean, default: false },
-    link: String,
-    metadata: mongoose.Schema.Types.Mixed,
-    createdAt: { type: Date, default: Date.now },
-  },
-  { timestamps: true }
-);
+const MONGODB_URI = process.env.MONGODB_URI;
 
-const Notification = mongoose.models.Notification || mongoose.model('Notification', NotificationSchema);
+async function connectDB() {
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
+  await mongoose.connect(MONGODB_URI || "");
+}
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    const { searchParams } = new URL(request.url);
-    const email = searchParams.get('email');
-    const unreadOnly = searchParams.get('unreadOnly') === 'true';
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const searchParams = request.nextUrl.searchParams;
+    const userId = searchParams.get("userId");
+    const isRead = searchParams.get("isRead");
+    const limit = parseInt(searchParams.get("limit") || "50");
 
-    const query: any = {};
-    if (email) query.email = email;
-    if (unreadOnly) query.read = false;
+    let query: any = {};
+
+    if (userId) {
+      query.userId = userId;
+    }
+
+    if (isRead !== null) {
+      query.isRead = isRead === "true";
+    }
 
     const notifications = await Notification.find(query)
       .sort({ createdAt: -1 })
-      .limit(limit);
+      .limit(limit)
+      .populate("userId", "email name");
 
-    return NextResponse.json({ success: true, notifications });
-  } catch (error) {
-    console.error('Error fetching notifications:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    const unreadCount = await Notification.countDocuments({
+      ...query,
+      isRead: false,
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: notifications,
+      unreadCount,
+    });
+  } catch (error: any) {
+    console.error("Error fetching notifications:", error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
+
     const body = await request.json();
 
     const notification = new Notification({
       userId: body.userId,
-      email: body.email,
+      type: body.type,
       title: body.title,
       message: body.message,
-      type: body.type || 'info',
-      read: false,
-      link: body.link,
-      metadata: body.metadata,
+      relatedId: body.relatedId,
+      relatedType: body.relatedType,
+      priority: body.priority || "MEDIUM",
+      actionUrl: body.actionUrl,
     });
 
     await notification.save();
 
-    return NextResponse.json({ success: true, notification });
-  } catch (error) {
-    console.error('Error creating notification:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({
+      success: true,
+      data: notification,
+    });
+  } catch (error: any) {
+    console.error("Error creating notification:", error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
     await connectDB();
+
     const body = await request.json();
-    const { id, read } = body;
+    const { notificationId, isRead } = body;
 
     const notification = await Notification.findByIdAndUpdate(
-      id,
-      { read },
+      notificationId,
+      { isRead },
       { new: true }
     );
 
-    if (!notification) {
-      return NextResponse.json({ success: false, error: 'Notification not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: true, notification });
-  } catch (error) {
-    console.error('Error updating notification:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({
+      success: true,
+      data: notification,
+    });
+  } catch (error: any) {
+    console.error("Error updating notification:", error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }
-
-export async function DELETE(request: NextRequest) {
-  try {
-    await connectDB();
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    const email = searchParams.get('email');
-
-    if (id) {
-      await Notification.findByIdAndDelete(id);
-    } else if (email) {
-      await Notification.deleteMany({ email });
-    } else {
-      return NextResponse.json({ success: false, error: 'ID or email required' }, { status: 400 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting notification:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
-  }
-}
-

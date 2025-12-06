@@ -1,57 +1,53 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db';
-import {
-  uploadDocument,
-  getDocuments,
-  logDocumentAccess,
-  getDocumentAccessLogs,
-  createDocumentVersion,
-  deleteDocument,
-} from '@/lib/document-management';
+import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
+import { Document } from "@/models/Document";
+
+const MONGODB_URI = process.env.MONGODB_URI;
+
+async function connectDB() {
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
+  await mongoose.connect(MONGODB_URI || "");
+}
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    const { searchParams } = new URL(request.url);
-    const action = searchParams.get('action') || 'list';
-    const entityType = searchParams.get('entityType') || undefined;
-    const entityId = searchParams.get('entityId') || undefined;
-    const documentType = searchParams.get('documentType') || undefined;
-    const documentId = searchParams.get('documentId') || undefined;
+    const searchParams = request.nextUrl.searchParams;
+    const relatedId = searchParams.get("relatedId");
+    const relatedType = searchParams.get("relatedType");
+    const documentId = searchParams.get("documentId");
 
-    if (action === 'list') {
-      if (!entityType || !entityId) {
+    if (documentId) {
+      const doc = await Document.findById(documentId).populate("uploadedBy", "email name");
+      if (!doc) {
         return NextResponse.json(
-          { success: false, error: 'entityType and entityId required' },
-          { status: 400 }
+          { success: false, error: "Document not found" },
+          { status: 404 }
         );
       }
-
-      const result = await getDocuments(entityType, entityId, documentType);
-      return NextResponse.json(result);
+      return NextResponse.json({ success: true, data: doc });
     }
 
-    if (action === 'access_logs') {
-      if (!documentId) {
-        return NextResponse.json(
-          { success: false, error: 'documentId required' },
-          { status: 400 }
-        );
-      }
+    let query: any = {};
+    if (relatedId) query.relatedId = relatedId;
+    if (relatedType) query.relatedType = relatedType;
 
-      const result = await getDocumentAccessLogs(documentId);
-      return NextResponse.json(result);
-    }
+    const documents = await Document.find(query)
+      .sort({ createdAt: -1 })
+      .populate("uploadedBy", "email name")
+      .populate("verifiedBy", "email name");
 
+    return NextResponse.json({
+      success: true,
+      data: documents,
+    });
+  } catch (error: any) {
+    console.error("Error fetching documents:", error);
     return NextResponse.json(
-      { success: false, error: 'Invalid action' },
-      { status: 400 }
-    );
-  } catch (error) {
-    console.error('Error in documents API:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to process request' },
+      { success: false, error: error.message },
       { status: 500 }
     );
   }
@@ -62,100 +58,69 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { action } = body;
 
-    if (action === 'upload') {
-      const {
-        fileName,
-        fileType,
-        fileSize,
-        fileUrl,
-        entityType,
-        entityId,
-        documentType,
-        uploadedBy,
-        metadata,
-      } = body;
+    // Convert base64 to buffer
+    const fileData = Buffer.from(body.fileData, "base64");
 
-      if (!fileName || !fileType || !fileUrl || !entityType || !entityId || !uploadedBy) {
-        return NextResponse.json(
-          { success: false, error: 'Missing required fields' },
-          { status: 400 }
-        );
-      }
+    const document = new Document({
+      fileName: body.fileName,
+      fileType: body.fileType,
+      fileSize: fileData.length,
+      fileData: fileData,
+      uploadedBy: body.uploadedBy,
+      relatedId: body.relatedId,
+      relatedType: body.relatedType,
+      documentType: body.documentType,
+      description: body.description,
+      expiryDate: body.expiryDate,
+    });
 
-      const result = await uploadDocument(
-        fileName,
-        fileType,
-        fileSize,
-        fileUrl,
-        entityType,
-        entityId,
-        documentType,
-        uploadedBy,
-        metadata
-      );
+    await document.save();
 
-      return NextResponse.json(result, { status: result.success ? 201 : 400 });
-    }
-
-    if (action === 'log_access') {
-      const { documentId, accessedBy, accessType, ipAddress, userAgent } = body;
-
-      if (!documentId || !accessedBy || !accessType) {
-        return NextResponse.json(
-          { success: false, error: 'Missing required fields' },
-          { status: 400 }
-        );
-      }
-
-      const result = await logDocumentAccess(
-        documentId,
-        accessedBy,
-        accessType,
-        ipAddress,
-        userAgent
-      );
-
-      return NextResponse.json(result);
-    }
-
-    if (action === 'create_version') {
-      const { documentId, newFileUrl, uploadedBy } = body;
-
-      if (!documentId || !newFileUrl || !uploadedBy) {
-        return NextResponse.json(
-          { success: false, error: 'Missing required fields' },
-          { status: 400 }
-        );
-      }
-
-      const result = await createDocumentVersion(documentId, newFileUrl, uploadedBy);
-      return NextResponse.json(result);
-    }
-
-    if (action === 'delete') {
-      const { documentId, deletedBy } = body;
-
-      if (!documentId || !deletedBy) {
-        return NextResponse.json(
-          { success: false, error: 'Missing required fields' },
-          { status: 400 }
-        );
-      }
-
-      const result = await deleteDocument(documentId, deletedBy);
-      return NextResponse.json(result);
-    }
-
+    return NextResponse.json({
+      success: true,
+      message: "Document uploaded successfully",
+      data: {
+        _id: document._id,
+        fileName: document.fileName,
+        fileType: document.fileType,
+        fileSize: document.fileSize,
+        uploadedAt: document.createdAt,
+      },
+    });
+  } catch (error: any) {
+    console.error("Error uploading document:", error);
     return NextResponse.json(
-      { success: false, error: 'Invalid action' },
-      { status: 400 }
+      { success: false, error: error.message },
+      { status: 500 }
     );
-  } catch (error) {
-    console.error('Error processing document request:', error);
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await connectDB();
+
+    const searchParams = request.nextUrl.searchParams;
+    const documentId = searchParams.get("documentId");
+
+    if (!documentId) {
+      return NextResponse.json(
+        { success: false, error: "Document ID required" },
+        { status: 400 }
+      );
+    }
+
+    await Document.findByIdAndDelete(documentId);
+
+    return NextResponse.json({
+      success: true,
+      message: "Document deleted successfully",
+    });
+  } catch (error: any) {
+    console.error("Error deleting document:", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to process request' },
+      { success: false, error: error.message },
       { status: 500 }
     );
   }

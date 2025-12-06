@@ -42,7 +42,7 @@
     "jspdf": "^2.5.1",
     "lucide-react": "^0.453.0",
     "mongodb": "^7.0.0",
-    "mongoose": "^9.0.0",
+    "mongoose": "^9.0.1",
     "next": "16.0.7",
     "nodemailer": "^7.0.11",
     "qrcode": "^1.5.4",
