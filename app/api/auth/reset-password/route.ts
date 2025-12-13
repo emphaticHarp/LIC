@@ -46,8 +46,9 @@ export async function POST(request: NextRequest) {
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-    // Update password
+    // Update password (keep isVerified status)
     user.password = hashedPassword;
+    user.isVerified = true; // Ensure user stays verified after password reset
     await user.save();
 
     return NextResponse.json({

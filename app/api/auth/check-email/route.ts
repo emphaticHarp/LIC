@@ -24,12 +24,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user exists
+    // Check if user exists (regardless of verification status)
     const user = await User.findOne({ email });
+
+    if (!user) {
+      return NextResponse.json({
+        success: true,
+        exists: false,
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      exists: !!user,
+      exists: true,
+      isVerified: user.isVerified,
     });
   } catch (error: any) {
     console.error('Check email error:', error);

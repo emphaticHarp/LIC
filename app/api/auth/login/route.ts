@@ -26,14 +26,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is verified
-    if (!user.isVerified) {
-      return NextResponse.json(
-        { error: 'Please verify your email before logging in' },
-        { status: 403 }
-      );
-    }
-
     // Compare password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     

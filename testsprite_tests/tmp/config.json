@@ -1,0 +1,23 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3000",
+  "executionArgs": {
+    "projectName": "lic",
+    "projectPath": "c:\\Users\\soumi\\Desktop\\lic",
+    "testIds": [
+      "TC001",
+      "TC002",
+      "TC005",
+      "TC006",
+      "TC010",
+      "TC013"
+    ],
+    "additionalInstruction": "Focus on critical user flows: registration, login, customer onboarding, policy creation, payments, and dashboard metrics. Ensure all core features work correctly.",
+    "envs": {
+      "API_KEY": "sk-user-J3035r0m_rb9wswH-erMdKrxVu_k8en9IXfCSSsDkWizoUY5orcN2933flwKdhazc_xX4rzHkdTsAdEfyFUUUWwL9EDVRFNev9OsYNCJ20VBRq-qzFoRjgx-aU6sAotwdnY"
+    }
+  },
+  "proxy": "http://df9498fc-0795-4ed1-8ab7-2db8b2691623:96TvurpLB5NhDr9FocgNXOxCjxVeAiR3@tun.testsprite.com:8080"
+}

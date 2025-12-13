@@ -184,7 +184,7 @@ function DashboardPageContent() {
         try {
           const notifsRes = await fetch(`/api/notifications?email=${encodeURIComponent(userEmail)}&limit=10`);
           const notifsData = await notifsRes.json();
-          if (notifsRes.ok && notifsData.success) {
+          if (notifsRes.ok && notifsData.success && Array.isArray(notifsData.notifications)) {
             const formattedNotifs = notifsData.notifications.map((n: any, idx: number) => ({
               id: n._id || idx + 1,
               title: n.title,

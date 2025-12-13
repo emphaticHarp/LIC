@@ -1,0 +1,208 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "React 19",
+    "Next.js 16",
+    "MongoDB",
+    "Mongoose",
+    "Tailwind CSS",
+    "Radix UI",
+    "Redux Toolkit",
+    "Socket.io",
+    "Nodemailer",
+    "JWT",
+    "bcryptjs"
+  ],
+  "features": [
+    {
+      "name": "Authentication & Authorization",
+      "description": "User login, registration, email verification, password reset, OTP generation and validation",
+      "files": [
+        "app/page.tsx",
+        "app/register/page.tsx",
+        "app/verify/page.tsx",
+        "app/forgot-password/page.tsx",
+        "app/reset-password/page.tsx",
+        "app/api/auth/login/route.ts",
+        "app/api/auth/register/route.ts",
+        "app/api/auth/verify-email/route.ts",
+        "app/api/auth/send-otp/route.ts",
+        "models/User.ts",
+        "models/OTP.ts"
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "description": "Main dashboard with business metrics, policies, claims, customers, collections, news, AI insights, analytics, and monitoring",
+      "files": [
+        "app/dashboard/page.tsx",
+        "components/features/dashboard-skeleton.tsx",
+        "components/features/calendar-holidays.tsx",
+        "components/features/indian-stock-market.tsx",
+        "components/features/news-videos.tsx",
+        "components/features/weather-widget.tsx",
+        "components/features/ai-insights.tsx",
+        "components/features/advanced-analytics.tsx",
+        "components/features/infrastructure-monitoring.tsx",
+        "components/features/paginated-table.tsx"
+      ]
+    },
+    {
+      "name": "Policy Management",
+      "description": "Create, view, update, and manage insurance policies with status tracking and premium calculations",
+      "files": [
+        "app/policies/page.tsx",
+        "app/new-policy/page.tsx",
+        "app/api/policies/route.ts",
+        "models/Policy.ts"
+      ]
+    },
+    {
+      "name": "Claims Management",
+      "description": "Process and track insurance claims with status updates and documentation",
+      "files": [
+        "app/claims/page.tsx",
+        "app/api/claims/route.ts",
+        "models/Claim.ts"
+      ]
+    },
+    {
+      "name": "Customer Management",
+      "description": "Manage customer profiles, KYC status, and customer relationships",
+      "files": [
+        "app/customers/page.tsx",
+        "app/customers-lic/page.tsx",
+        "app/api/customers/route.ts",
+        "models/Customer.ts"
+      ]
+    },
+    {
+      "name": "Payments & Collections",
+      "description": "Track payments, collections, and financial transactions",
+      "files": [
+        "app/payments/page.tsx",
+        "app/collections/page.tsx",
+        "app/api/payments/route.ts"
+      ]
+    },
+    {
+      "name": "Loans Management",
+      "description": "Manage loan applications and tracking",
+      "files": [
+        "app/loans/page.tsx",
+        "app/api/loans/route.ts",
+        "models/Loan.ts"
+      ]
+    },
+    {
+      "name": "Commission Management",
+      "description": "Track and manage agent commissions",
+      "files": [
+        "app/commission/page.tsx",
+        "app/api/commission/route.ts"
+      ]
+    },
+    {
+      "name": "Agent Management",
+      "description": "Manage insurance agents and their performance",
+      "files": [
+        "app/agent-management/page.tsx",
+        "app/agents/page.tsx",
+        "app/api/agents/route.ts"
+      ]
+    },
+    {
+      "name": "Reports & Analysis",
+      "description": "Generate and view business reports and analytics",
+      "files": [
+        "app/reports/page.tsx",
+        "app/analysis/page.tsx",
+        "app/api/reports/route.ts"
+      ]
+    },
+    {
+      "name": "Notifications",
+      "description": "System notifications and alerts for users",
+      "files": [
+        "app/api/notifications/route.ts",
+        "models/Notification.ts"
+      ]
+    },
+    {
+      "name": "Settings & Help",
+      "description": "User settings, help documentation, and support",
+      "files": [
+        "app/settings/page.tsx",
+        "app/help/page.tsx"
+      ]
+    },
+    {
+      "name": "UI Components",
+      "description": "Reusable UI components built with Radix UI and Tailwind CSS",
+      "files": [
+        "components/ui/alert.tsx",
+        "components/ui/badge.tsx",
+        "components/ui/button.tsx",
+        "components/ui/card.tsx",
+        "components/ui/dialog.tsx",
+        "components/ui/dropdown-menu.tsx",
+        "components/ui/menubar.tsx",
+        "components/ui/scroll-area.tsx",
+        "components/ui/sheet.tsx",
+        "components/ui/tabs.tsx"
+      ]
+    },
+    {
+      "name": "Layout Components",
+      "description": "Navigation bar, sidebar, and layout wrappers",
+      "files": [
+        "components/layout/navbar.tsx",
+        "components/layout/profile-sidebar.tsx"
+      ]
+    },
+    {
+      "name": "Database Models",
+      "description": "MongoDB Mongoose models for data persistence",
+      "files": [
+        "models/User.ts",
+        "models/Policy.ts",
+        "models/Claim.ts",
+        "models/Customer.ts",
+        "models/Loan.ts",
+        "models/OTP.ts",
+        "models/Notification.ts",
+        "models/Document.ts"
+      ]
+    },
+    {
+      "name": "Utilities & Helpers",
+      "description": "Helper functions for validation, PDF generation, storage, and communication",
+      "files": [
+        "lib/mongoose.ts",
+        "lib/mongodb.ts",
+        "lib/validation.ts",
+        "lib/pdf-generator.ts",
+        "lib/storage.ts",
+        "lib/communication.ts",
+        "lib/utils.ts",
+        "lib/toast.ts"
+      ]
+    },
+    {
+      "name": "Custom Hooks",
+      "description": "React hooks for API calls and form state management",
+      "files": [
+        "hooks/useApi.ts",
+        "hooks/useFormState.ts"
+      ]
+    },
+    {
+      "name": "Redux Store",
+      "description": "State management with Redux Toolkit",
+      "files": [
+        "store/index.ts",
+        "store/slices/"
+      ]
+    }
+  ]
+}
