@@ -1,0 +1,216 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                    GLOBAL SEARCH - QUICK START GUIDE                           ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+🎯 WHAT CHANGED?
+
+  OLD: Search tab in Dashboard (only available in dashboard)
+  NEW: Global Search in Navbar (available everywhere!)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 HOW TO USE
+
+1. OPEN GLOBAL SEARCH
+   • Click the search icon in navbar
+   • OR Press ⌘K (Mac) / Ctrl+K (Windows/Linux)
+
+2. QUICK SEARCH (Default Tab)
+   • Type your search term
+   • See results in real-time
+   • Click any result to navigate
+
+3. ADVANCED SEARCH
+   • Click "Advanced" tab
+   • Enter search term
+   • Set filters:
+     - Type: Customer, Policy, Claim, Payment, Agent, Loan
+     - Status: Active, Inactive, Pending, Approved, Rejected
+     - Date Range: Today, Week, Month, Quarter, Year
+     - Premium Range: ₹0-10K, ₹10K-50K, ₹50K-1L, ₹1L+
+   • Results update automatically
+
+4. SAVE SEARCHES
+   • In Advanced tab, enter search name
+   • Click "Save" button
+   • Search saved for later use
+
+5. VIEW SAVED SEARCHES
+   • Click "Saved Searches" tab
+   • Click "Load" to use saved search
+   • Click trash icon to delete
+
+6. VIEW RECENT SEARCHES
+   • Click "Recent" tab
+   • Shows last 10 searches
+   • Click to search again
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⌨️ KEYBOARD SHORTCUTS
+
+  ⌘K / Ctrl+K    Open global search
+  Escape         Close search dialog
+  Enter          Search (in quick search)
+  Click Result   Navigate to detail page
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 WHAT YOU CAN SEARCH
+
+  CUSTOMERS
+  ├─ Search by name, email, phone
+  ├─ Shows status and KYC status
+  └─ Navigate to customer profile
+
+  POLICIES
+  ├─ Search by policy ID or number
+  ├─ Shows type, status, premium
+  └─ Navigate to policy details
+
+  CLAIMS
+  ├─ Search by claim ID
+  ├─ Shows amount and status
+  └─ Navigate to claim details
+
+  PAYMENTS
+  ├─ Search by transaction ID
+  ├─ Shows amount, method, status
+  └─ Navigate to payment details
+
+  AGENTS
+  ├─ Search by agent name or ID
+  ├─ Shows status and commission
+  └─ Navigate to agent profile
+
+  LOANS
+  ├─ Search by loan ID
+  ├─ Shows amount, EMI, status
+  └─ Navigate to loan details
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 SEARCH RESULT COLORS
+
+  🔵 BLUE    = Customer
+  🟢 GREEN   = Policy
+  🟠 ORANGE  = Claim
+  🟣 PURPLE  = Payment
+  🩷 PINK    = Agent
+  🟦 INDIGO  = Loan
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 TIPS & TRICKS
+
+  1. USE KEYBOARD SHORTCUT
+     Press ⌘K / Ctrl+K for instant access
+
+  2. SAVE FREQUENT SEARCHES
+     Save searches you use often for quick access
+
+  3. USE ADVANCED FILTERS
+     Combine filters for precise results
+
+  4. CHECK RECENT SEARCHES
+     Quickly re-run recent searches
+
+  5. DARK MODE SUPPORT
+     Global search works in dark mode too
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📱 WORKS EVERYWHERE
+
+  ✅ Desktop
+  ✅ Tablet
+  ✅ Mobile
+  ✅ All pages
+  ✅ All browsers
+  ✅ Dark mode
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 COMMON SEARCHES
+
+  Search for Active Policies
+  ├─ Type: "policy"
+  ├─ Status: "active"
+  └─ Save as "Active Policies"
+
+  Search for Pending Claims
+  ├─ Type: "claim"
+  ├─ Status: "pending"
+  └─ Save as "Pending Claims"
+
+  Search for Recent Payments
+  ├─ Type: "payment"
+  ├─ Date Range: "week"
+  └─ Save as "Recent Payments"
+
+  Search for High Premium Policies
+  ├─ Type: "policy"
+  ├─ Premium Range: "₹1L+"
+  └─ Save as "High Premium Policies"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❓ FAQ
+
+Q: Where is the search tab in dashboard?
+A: Removed! Global search in navbar is better and available everywhere.
+
+Q: Can I still search?
+A: Yes! Better than before. Press ⌘K or click search icon in navbar.
+
+Q: Will my searches be saved?
+A: Yes! Saved searches and recent searches are stored locally.
+
+Q: Does it work on mobile?
+A: Yes! Fully responsive and works on all devices.
+
+Q: Can I search multiple types at once?
+A: Yes! Leave "Type" as "All Types" to search everything.
+
+Q: How many results do I get?
+A: Up to 20 results per search.
+
+Q: Can I export search results?
+A: Click any result to navigate to detail page for more options.
+
+Q: Is my search data private?
+A: Yes! Searches stored locally on your device, not on server.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎉 BENEFITS
+
+  ⚡ FASTER
+  └─ Search from anywhere, anytime
+
+  🎯 SMARTER
+  └─ Advanced filters for precise results
+
+  💾 BETTER
+  └─ Save and reuse searches
+
+  📱 EVERYWHERE
+  └─ Works on all devices
+
+  🌙 MODERN
+  └─ Dark mode support
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📞 NEED HELP?
+
+  • Check the search tips in the dialog
+  • Use keyboard shortcut ⌘K / Ctrl+K
+  • Try advanced filters for better results
+  • Save frequently used searches
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ ENJOY YOUR NEW GLOBAL SEARCH! ✨
+
+╚════════════════════════════════════════════════════════════════════════════════╝

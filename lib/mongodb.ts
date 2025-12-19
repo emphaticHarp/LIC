@@ -1,11 +1,11 @@
 import { MongoClient } from 'mongodb';
 import { attachDatabasePool } from '@vercel/functions';
 
-if (!process.env.amarlic_db_MONGODB_URI) {
-  throw new Error('Invalid/Missing environment variable: "amarlic_db_MONGODB_URI"');
-}
+const uri = process.env.MONGODB_URI || process.env.amarlic_db_MONGODB_URI;
 
-const uri = process.env.amarlic_db_MONGODB_URI;
+if (!uri) {
+  throw new Error('Invalid/Missing environment variable: "MONGODB_URI" or "amarlic_db_MONGODB_URI"');
+}
 const options = {};
 
 let client: MongoClient;

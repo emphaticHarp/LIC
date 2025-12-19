@@ -3,58 +3,75 @@
     "TypeScript",
     "React 19",
     "Next.js 16",
-    "MongoDB",
-    "Mongoose",
-    "Tailwind CSS",
-    "Radix UI",
+    "Tailwind CSS 4",
     "Redux Toolkit",
-    "Socket.io",
+    "MongoDB/Mongoose",
+    "Radix UI",
+    "React Hook Form",
+    "Zod",
+    "JWT Authentication",
     "Nodemailer",
-    "JWT",
-    "bcryptjs"
+    "AWS SDK",
+    "Socket.io",
+    "Twilio",
+    "jsPDF & html2canvas",
+    "Recharts",
+    "Lottie Animations"
   ],
   "features": [
     {
       "name": "Authentication & Authorization",
-      "description": "User login, registration, email verification, password reset, OTP generation and validation",
+      "description": "User registration, login, password reset, OTP verification, JWT token management",
       "files": [
-        "app/page.tsx",
+        "app/api/auth/",
         "app/register/page.tsx",
-        "app/verify/page.tsx",
         "app/forgot-password/page.tsx",
         "app/reset-password/page.tsx",
-        "app/api/auth/login/route.ts",
-        "app/api/auth/register/route.ts",
-        "app/api/auth/verify-email/route.ts",
-        "app/api/auth/send-otp/route.ts",
+        "app/verify/page.tsx",
+        "store/slices/authSlice.ts",
         "models/User.ts",
         "models/OTP.ts"
       ]
     },
     {
-      "name": "Dashboard",
-      "description": "Main dashboard with business metrics, policies, claims, customers, collections, news, AI insights, analytics, and monitoring",
+      "name": "Dashboard & Analytics",
+      "description": "Main dashboard with analytics, data visualization, and performance metrics",
       "files": [
         "app/dashboard/page.tsx",
-        "components/features/dashboard-skeleton.tsx",
-        "components/features/calendar-holidays.tsx",
-        "components/features/indian-stock-market.tsx",
-        "components/features/news-videos.tsx",
-        "components/features/weather-widget.tsx",
-        "components/features/ai-insights.tsx",
+        "app/dashboard/enhanced-features.tsx",
+        "app/dashboard/new-features.tsx",
         "components/features/advanced-analytics.tsx",
-        "components/features/infrastructure-monitoring.tsx",
-        "components/features/paginated-table.tsx"
+        "components/features/data-analytics.tsx",
+        "components/features/reports-analytics.tsx",
+        "components/ui/pie-chart.tsx"
       ]
     },
     {
       "name": "Policy Management",
-      "description": "Create, view, update, and manage insurance policies with status tracking and premium calculations",
+      "description": "Create, view, compare, and manage insurance policies with eligibility calculators",
       "files": [
         "app/policies/page.tsx",
         "app/new-policy/page.tsx",
-        "app/api/policies/route.ts",
-        "models/Policy.ts"
+        "components/features/policy-comparison.tsx",
+        "components/features/lap-eligibility-calculator.tsx",
+        "components/features/surrender-value-calculator.tsx",
+        "components/features/tax-benefit-calculator.tsx",
+        "components/features/maturity-benefit.tsx",
+        "models/Policy.ts",
+        "store/slices/policySlice.ts"
+      ]
+    },
+    {
+      "name": "Loan Management (LAP)",
+      "description": "Loan Against Policy (LAP) application, management, and eligibility tracking",
+      "files": [
+        "app/loans/page.tsx",
+        "app/loans/lap-features.tsx",
+        "components/features/lap-application-form.tsx",
+        "components/features/lap-management.tsx",
+        "components/features/lap-eligibility-calculator.tsx",
+        "models/Loan.ts",
+        "app/api/lap/"
       ]
     },
     {
@@ -62,146 +79,222 @@
       "description": "Process and track insurance claims with status updates and documentation",
       "files": [
         "app/claims/page.tsx",
-        "app/api/claims/route.ts",
-        "models/Claim.ts"
+        "app/claims/page-new.tsx",
+        "components/features/claims-management.tsx",
+        "models/Claim.ts",
+        "store/slices/claimSlice.ts",
+        "app/api/claims/"
       ]
     },
     {
       "name": "Customer Management",
-      "description": "Manage customer profiles, KYC status, and customer relationships",
+      "description": "Manage customer profiles, segmentation, and relationship tracking",
       "files": [
         "app/customers/page.tsx",
-        "app/customers-lic/page.tsx",
-        "app/api/customers/route.ts",
-        "models/Customer.ts"
+        "app/customers/loans-banking.tsx",
+        "components/features/customer-management.tsx",
+        "components/features/customer-segmentation.tsx",
+        "models/Customer.ts",
+        "store/slices/customerSlice.ts",
+        "app/api/customers/"
       ]
     },
     {
-      "name": "Payments & Collections",
-      "description": "Track payments, collections, and financial transactions",
+      "name": "Payment Processing",
+      "description": "Handle premium payments, payment tracking, and transaction management",
       "files": [
         "app/payments/page.tsx",
-        "app/collections/page.tsx",
-        "app/api/payments/route.ts"
+        "components/features/payments-management.tsx",
+        "store/slices/paymentSlice.ts",
+        "app/api/payments/"
       ]
     },
     {
-      "name": "Loans Management",
-      "description": "Manage loan applications and tracking",
-      "files": [
-        "app/loans/page.tsx",
-        "app/api/loans/route.ts",
-        "models/Loan.ts"
-      ]
-    },
-    {
-      "name": "Commission Management",
-      "description": "Track and manage agent commissions",
+      "name": "Commission & Collections",
+      "description": "Track agent commissions and policy collections with analytics",
       "files": [
         "app/commission/page.tsx",
-        "app/api/commission/route.ts"
+        "app/collections/page.tsx",
+        "components/features/commission-tracking.tsx",
+        "components/features/collections-tracking.tsx",
+        "app/api/commission/",
+        "app/api/collections/"
+      ]
+    },
+    {
+      "name": "Document Management",
+      "description": "Upload, store, and manage policy documents with PDF generation",
+      "files": [
+        "components/features/document-upload.tsx",
+        "components/certificate/certificate-generator.tsx",
+        "lib/document-management.ts",
+        "lib/pdf-generator.ts",
+        "models/Document.ts",
+        "app/api/documents/"
+      ]
+    },
+    {
+      "name": "Audit & Compliance",
+      "description": "Track user actions, maintain audit trails, and compliance checklists",
+      "files": [
+        "components/features/audit-trail.tsx",
+        "components/features/compliance-checklist.tsx",
+        "lib/audit.ts",
+        "app/api/audit-logs/",
+        "app/api/compliance/"
+      ]
+    },
+    {
+      "name": "Notifications & Alerts",
+      "description": "Lapse prevention alerts, notifications, and communication management",
+      "files": [
+        "components/features/lapse-prevention-alerts.tsx",
+        "lib/communication.ts",
+        "models/Notification.ts",
+        "store/slices/notificationSlice.ts",
+        "app/api/notifications/",
+        "app/api/alerts/",
+        "app/api/lapse-alerts/"
+      ]
+    },
+    {
+      "name": "Search & Filtering",
+      "description": "Advanced search capabilities with filtering and pagination",
+      "files": [
+        "components/features/advanced-search.tsx",
+        "components/features/advanced-search-filter.tsx",
+        "components/features/search-filter.tsx",
+        "components/features/paginated-table.tsx",
+        "app/api/search/"
+      ]
+    },
+    {
+      "name": "Reports & Exports",
+      "description": "Generate and export reports in various formats",
+      "files": [
+        "app/reports/page.tsx",
+        "components/features/reports-analytics.tsx",
+        "app/api/reports/"
       ]
     },
     {
       "name": "Agent Management",
-      "description": "Manage insurance agents and their performance",
+      "description": "Manage agents, their performance, and assignments",
       "files": [
-        "app/agent-management/page.tsx",
         "app/agents/page.tsx",
-        "app/api/agents/route.ts"
+        "app/agent-management/page.tsx",
+        "components/features/agent-tools.tsx",
+        "store/slices/agentSlice.ts",
+        "app/api/agents/",
+        "app/api/agent-tools/"
       ]
     },
     {
-      "name": "Reports & Analysis",
-      "description": "Generate and view business reports and analytics",
+      "name": "Integrations",
+      "description": "Third-party integrations including email, SMS, and external services",
       "files": [
-        "app/reports/page.tsx",
-        "app/analysis/page.tsx",
-        "app/api/reports/route.ts"
+        "app/integrations/page.tsx",
+        "lib/integrations.ts",
+        "app/api/integrations/",
+        "app/api/email/",
+        "app/api/communication/"
       ]
     },
     {
-      "name": "Notifications",
-      "description": "System notifications and alerts for users",
+      "name": "Market Data & News",
+      "description": "Indian stock market data, financial news, and market insights",
       "files": [
-        "app/api/notifications/route.ts",
-        "models/Notification.ts"
+        "components/features/indian-stock-market.tsx",
+        "components/features/news-videos.tsx",
+        "app/api/stocks/",
+        "app/api/news/"
       ]
     },
     {
-      "name": "Settings & Help",
-      "description": "User settings, help documentation, and support",
+      "name": "Expense Management",
+      "description": "Track and manage business expenses",
       "files": [
-        "app/settings/page.tsx",
-        "app/help/page.tsx"
+        "components/features/expense-management.tsx",
+        "app/api/analytics/"
       ]
     },
     {
-      "name": "UI Components",
+      "name": "Grievance Management",
+      "description": "Handle customer grievances and complaints",
+      "files": [
+        "components/features/grievance-management.tsx"
+      ]
+    },
+    {
+      "name": "Infrastructure Monitoring",
+      "description": "Monitor system health and performance metrics",
+      "files": [
+        "components/features/infrastructure-monitoring.tsx",
+        "app/api/monitoring/"
+      ]
+    },
+    {
+      "name": "UI Components & Layout",
       "description": "Reusable UI components built with Radix UI and Tailwind CSS",
       "files": [
-        "components/ui/alert.tsx",
-        "components/ui/badge.tsx",
-        "components/ui/button.tsx",
-        "components/ui/card.tsx",
-        "components/ui/dialog.tsx",
-        "components/ui/dropdown-menu.tsx",
-        "components/ui/menubar.tsx",
-        "components/ui/scroll-area.tsx",
-        "components/ui/sheet.tsx",
-        "components/ui/tabs.tsx"
-      ]
-    },
-    {
-      "name": "Layout Components",
-      "description": "Navigation bar, sidebar, and layout wrappers",
-      "files": [
+        "components/ui/",
         "components/layout/navbar.tsx",
-        "components/layout/profile-sidebar.tsx"
+        "components/layout/profile-sidebar.tsx",
+        "components/providers/",
+        "components/features/enhanced-ui-components.tsx"
       ]
     },
     {
-      "name": "Database Models",
-      "description": "MongoDB Mongoose models for data persistence",
+      "name": "State Management",
+      "description": "Redux store with slices for auth, policies, claims, customers, payments, etc.",
       "files": [
-        "models/User.ts",
-        "models/Policy.ts",
-        "models/Claim.ts",
-        "models/Customer.ts",
-        "models/Loan.ts",
-        "models/OTP.ts",
-        "models/Notification.ts",
-        "models/Document.ts"
+        "store/index.ts",
+        "store/slices/"
       ]
     },
     {
       "name": "Utilities & Helpers",
-      "description": "Helper functions for validation, PDF generation, storage, and communication",
+      "description": "Common utilities for validation, database operations, and API calls",
       "files": [
-        "lib/mongoose.ts",
-        "lib/mongodb.ts",
-        "lib/validation.ts",
-        "lib/pdf-generator.ts",
-        "lib/storage.ts",
-        "lib/communication.ts",
         "lib/utils.ts",
-        "lib/toast.ts"
-      ]
-    },
-    {
-      "name": "Custom Hooks",
-      "description": "React hooks for API calls and form state management",
-      "files": [
+        "lib/validation.ts",
+        "lib/db.ts",
+        "lib/mongodb.ts",
+        "lib/mongoose.ts",
+        "lib/storage.ts",
+        "lib/toast.ts",
         "hooks/useApi.ts",
         "hooks/useFormState.ts"
       ]
     },
     {
-      "name": "Redux Store",
-      "description": "State management with Redux Toolkit",
+      "name": "Calendar & Holidays",
+      "description": "Calendar management with holiday tracking",
       "files": [
-        "store/index.ts",
-        "store/slices/"
+        "components/features/calendar-holidays.tsx"
+      ]
+    },
+    {
+      "name": "Weather Widget",
+      "description": "Display weather information",
+      "files": [
+        "components/features/weather-widget.tsx"
+      ]
+    },
+    {
+      "name": "AI Insights",
+      "description": "AI-powered insights and recommendations",
+      "files": [
+        "components/features/ai-insights.tsx",
+        "app/api/ai/",
+        "lib/agent-tools.ts"
+      ]
+    },
+    {
+      "name": "Analysis & Reporting",
+      "description": "Data analysis and reporting features",
+      "files": [
+        "app/analysis/page.tsx"
       ]
     }
   ]

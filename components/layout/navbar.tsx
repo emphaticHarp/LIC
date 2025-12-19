@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "@/components/providers/theme-provider";
 import { Button } from "@/components/ui/button";
-import { AdvancedSearch } from "@/components/features/advanced-search";
+import { GlobalSearch } from "@/components/features/global-search";
 
 interface NavbarProps {
   email: string;
@@ -170,8 +170,8 @@ export default function Navbar({
 
           {/* Profile Section - Desktop */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* Advanced Search */}
-            <AdvancedSearch />
+            {/* Global Search */}
+            <GlobalSearch />
             {/* Theme Toggle */}
             <Button
               variant="ghost"

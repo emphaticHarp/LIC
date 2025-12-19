@@ -24,6 +24,7 @@ import { AdvancedAnalytics } from "@/components/features/advanced-analytics";
 import { InfrastructureMonitoring } from "@/components/features/infrastructure-monitoring";
 import { PaginatedTable } from "@/components/features/paginated-table";
 import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
+import { MiniMusicPlayer } from "@/components/features/mini-music-player";
 
 function DashboardPageContent() {
   const router = useRouter();
@@ -405,6 +406,11 @@ function DashboardPageContent() {
                   </CardContent>
                 </Card>
                   </div>
+                </div>
+
+                {/* Music Player Section */}
+                <div className="mt-6">
+                  <MiniMusicPlayer />
                 </div>
 
                 {/* Business Health Snapshot */}

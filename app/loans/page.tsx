@@ -13,6 +13,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, AlertCircle, Eye, Edit2, Trash2, Send, FileText, DollarSign, Clock, User } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
+import { LAPApplicationForm } from "@/components/features/lap-application-form";
+import { LAPEligibilityCalculator } from "@/components/features/lap-eligibility-calculator";
+import { LAPManagement } from "@/components/features/lap-management";
 
 interface Loan {
   _id: string;
@@ -354,12 +357,22 @@ export default function LoansPage() {
               </CardContent>
             </Card>
 
-            {/* Loans Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>All Loans</CardTitle>
-                <CardDescription>Showing {filteredLoans.length} of {loans.length} loans</CardDescription>
-              </CardHeader>
+            {/* LAP Features Tabs */}
+            <Tabs defaultValue="loans-list" className="mb-6">
+              <TabsList className="grid w-full grid-cols-4 h-auto p-1">
+                <TabsTrigger value="loans-list" className="text-xs sm:text-sm py-2 px-2">All Loans</TabsTrigger>
+                <TabsTrigger value="lap-application" className="text-xs sm:text-sm py-2 px-2">LAP Application</TabsTrigger>
+                <TabsTrigger value="lap-eligibility" className="text-xs sm:text-sm py-2 px-2">LAP Eligibility</TabsTrigger>
+                <TabsTrigger value="lap-management" className="text-xs sm:text-sm py-2 px-2">LAP Management</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="loans-list" className="space-y-4">
+                {/* Loans Table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>All Loans</CardTitle>
+                    <CardDescription>Showing {filteredLoans.length} of {loans.length} loans</CardDescription>
+                  </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -413,7 +426,21 @@ export default function LoansPage() {
                   </table>
                 </div>
               </CardContent>
-            </Card>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="lap-application" className="space-y-4">
+                <LAPApplicationForm />
+              </TabsContent>
+
+              <TabsContent value="lap-eligibility" className="space-y-4">
+                <LAPEligibilityCalculator />
+              </TabsContent>
+
+              <TabsContent value="lap-management" className="space-y-4">
+                <LAPManagement />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
 
