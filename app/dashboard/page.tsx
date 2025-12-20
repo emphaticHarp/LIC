@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from "recharts";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
+import { BreadcrumbNav } from "@/components/features/breadcrumb-nav";
 import { CalendarHolidays } from "@/components/features/calendar-holidays";
 import { IndianStockMarket } from "@/components/features/indian-stock-market";
 import { NewsVideos } from "@/components/features/news-videos";
@@ -342,6 +344,9 @@ function DashboardPageContent() {
         {/* Main Content */}
         <div className={`flex-1 transition-all duration-300 ${showProfileSidebar ? 'md:mr-80' : ''}`}>
           <div className="p-4 sm:p-6">
+            {/* Breadcrumbs */}
+            <BreadcrumbNav />
+            
             {/* Dashboard Tabs */}
             <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
               <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 h-auto p-1">
@@ -351,9 +356,9 @@ function DashboardPageContent() {
                 <TabsTrigger value="customers" className="text-xs sm:text-sm py-2 px-2 hidden sm:flex">Customers</TabsTrigger>
                 <TabsTrigger value="collections" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">Collections</TabsTrigger>
                 <TabsTrigger value="news" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">News</TabsTrigger>
-                <TabsTrigger value="ai-insights" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">AI Insights</TabsTrigger>
+                <TabsTrigger value="ai-insights" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">AI</TabsTrigger>
                 <TabsTrigger value="analytics" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">Analytics</TabsTrigger>
-                <TabsTrigger value="monitoring" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">Monitoring</TabsTrigger>
+                <TabsTrigger value="monitoring" className="text-xs sm:text-sm py-2 px-2 hidden lg:flex">Monitor</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
@@ -441,11 +446,37 @@ function DashboardPageContent() {
                           <p className="text-sm font-medium text-gray-700">Portfolio Mix</p>
                           <span className="text-xs text-gray-500">Life / Health / Other</span>
                         </div>
-                        <div className="h-44 sm:h-52 rounded-lg border border-dashed border-gray-200 flex items-center justify-center">
-                          {/* Placeholder for shadcn pie chart component */}
-                          <p className="text-xs sm:text-sm text-gray-500 text-center px-4">
-                            Connect the `pie-chart` component here to visualize premium distribution by product type.
-                          </p>
+                        <div className="h-44 sm:h-52 rounded-lg border border-dashed border-gray-200 flex items-center justify-center bg-white/50">
+                          <ResponsiveContainer width="100%" height={200}>
+                            <PieChart>
+                              <Pie
+                                data={[
+                                  { name: "Life Insurance", value: 55, color: "#3b82f6" },
+                                  { name: "Health Insurance", value: 30, color: "#10b981" },
+                                  { name: "Other", value: 15, color: "#f59e0b" }
+                                ]}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={40}
+                                outerRadius={70}
+                                paddingAngle={2}
+                                dataKey="value"
+                              >
+                                <Cell fill="#3b82f6" />
+                                <Cell fill="#10b981" />
+                                <Cell fill="#f59e0b" />
+                              </Pie>
+                              <Tooltip 
+                                formatter={(value) => `${value}%`}
+                                contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px" }}
+                              />
+                              <Legend 
+                                verticalAlign="bottom" 
+                                height={36}
+                                formatter={(value) => value}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
                         </div>
                       </div>
 

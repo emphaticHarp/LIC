@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { X } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
+import { BreadcrumbNav } from "@/components/features/breadcrumb-nav";
 import { PieChart } from "@/components/ui/pie-chart";
 import { ClaimsManagementComponent } from "@/components/features/claims-management";
 import { PaginatedTable } from "@/components/features/paginated-table";
@@ -1274,6 +1275,8 @@ function ClaimsPageContent() {
             </Card>
 
             {/* Claims Content with Tabs */}
+            <BreadcrumbNav />
+            
             <Tabs value={activeTab} onValueChange={(value) => {
               setActiveTab(value);
             }} className="space-y-4">

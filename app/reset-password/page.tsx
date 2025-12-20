@@ -102,6 +102,7 @@ function ResetPasswordPageContent() {
             width={150}
             height={150}
             className="mx-auto mb-4 rounded-lg"
+            style={{ width: "auto", height: "auto" }}
             priority
           />
           <p className="text-gray-600">Life Insurance Corporation of India</p>

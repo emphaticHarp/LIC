@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Search, Filter, X } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
+import { BreadcrumbNav } from "@/components/features/breadcrumb-nav";
 import CertificateGenerator from "@/components/certificate/certificate-generator";
 import { PaginatedTable } from "@/components/features/paginated-table";
 import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
@@ -697,6 +698,9 @@ function PoliciesPageContent() {
         {/* Main Content */}
         <div className={`flex-1 transition-all duration-300 ${showProfileSidebar ? 'md:mr-80' : ''}`}>
           <div className="p-4 sm:p-6">
+            {/* Breadcrumbs */}
+            <BreadcrumbNav />
+            
             {/* Header */}
             <div className="mb-4 sm:mb-6">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Insurance Policies</h1>

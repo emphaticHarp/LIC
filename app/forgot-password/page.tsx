@@ -119,6 +119,7 @@ export default function ForgotPasswordPage() {
             width={120}
             height={120}
             className="mx-auto mb-3 sm:mb-4 rounded-lg"
+            style={{ width: "auto", height: "auto" }}
             priority
           />
           <p className="text-xs sm:text-sm text-gray-600">Life Insurance Corporation of India</p>

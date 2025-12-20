@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
+import { ObjectId } from 'mongodb';
 
 export async function GET() {
   try {
@@ -17,6 +18,7 @@ export async function GET() {
           duration: song.duration || 0,
           url: song.url || '',
           cover: song.cover || '',
+          isValid: song.url && (song.url.startsWith('data:') || song.url.startsWith('blob:') === false),
         })),
         total: songs.length,
       },
@@ -37,7 +39,7 @@ export async function POST(request: NextRequest) {
     const db = client.db('lic');
 
     const body = await request.json();
-    const { title, artist, duration, url, cover } = body;
+    const { title, artist, duration, url, cover, audioData } = body;
 
     if (!title || !url) {
       return NextResponse.json(
@@ -46,11 +48,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // If audioData is provided (base64), store it; otherwise store the URL
+    const songUrl = audioData || url;
+
     const song = {
       title,
       artist: artist || 'Unknown Artist',
       duration: duration || 0,
-      url,
+      url: songUrl,
       cover: cover || '',
       createdAt: new Date(),
     };
@@ -70,6 +75,46 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating song:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to create song';
+    return NextResponse.json(
+      { success: false, error: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const client = await clientPromise;
+    const db = client.db('lic');
+
+    const body = await request.json();
+    const { id } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Missing song ID' },
+        { status: 400 }
+      );
+    }
+
+    const result = await db.collection('songs').deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Song not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: true, message: 'Song deleted successfully' },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Error deleting song:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to delete song';
     return NextResponse.json(
       { success: false, error: errorMessage },
       { status: 500 }

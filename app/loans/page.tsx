@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, AlertCircle, Eye, Edit2, Trash2, Send, FileText, DollarSign, Clock, User } from "lucide-react";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
+import { BreadcrumbNav } from "@/components/features/breadcrumb-nav";
 import { LAPApplicationForm } from "@/components/features/lap-application-form";
 import { LAPEligibilityCalculator } from "@/components/features/lap-eligibility-calculator";
 import { LAPManagement } from "@/components/features/lap-management";
@@ -262,6 +263,9 @@ export default function LoansPage() {
       <div className="flex min-h-[calc(100vh-4rem)]">
         <div className={`flex-1 transition-all duration-300 ${showProfileSidebar ? 'mr-80' : ''}`}>
           <div className="p-6">
+            {/* Breadcrumbs */}
+            <BreadcrumbNav />
+            
             {/* Header */}
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Loan Management</h1>

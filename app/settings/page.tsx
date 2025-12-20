@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
+import { BreadcrumbNav } from "@/components/features/breadcrumb-nav";
 
 function SettingsPageContent() {
   const router = useRouter();
@@ -205,6 +206,9 @@ function SettingsPageContent() {
         {/* Main Content */}
         <div className={`flex-1 transition-all duration-300 ${showProfileSidebar ? 'mr-80' : ''}`}>
           <div className="p-6">
+            {/* Breadcrumbs */}
+            <BreadcrumbNav />
+            
             {/* Header */}
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings & Configuration</h1>

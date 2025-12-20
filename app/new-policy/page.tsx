@@ -19,6 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
+import { BreadcrumbNav } from "@/components/features/breadcrumb-nav";
 
 function NewPolicyPageContent() {
   const router = useRouter();
@@ -512,6 +513,9 @@ function NewPolicyPageContent() {
       <div className="flex min-h-[calc(100vh-4rem)]">
         <div className={`flex-1 transition-all duration-300 ${showProfileSidebar ? 'mr-80' : ''}`}>
           <div className="p-6">
+            {/* Breadcrumbs */}
+            <BreadcrumbNav />
+            
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">New Policy Application</h1>
               <p className="text-gray-600">Create a new insurance policy for your customer</p>

@@ -5,7 +5,9 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Menu, Heart, Plus, SkipBack, SkipForward, Play, Pause, Music, Folder, Trash2, ListPlus, Upload, Loader } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Menu, Heart, Plus, SkipBack, SkipForward, Play, Pause, Music, Folder, Trash2, ListPlus, Upload, Loader, Volume2, Shuffle, Repeat, Search, Clock, Star } from "lucide-react";
 
 interface Song {
   id: string;
@@ -14,6 +16,15 @@ interface Song {
   albumArt?: string;
   album?: string;
   artist?: string;
+  isFavorite?: boolean;
+  playCount?: number;
+}
+
+interface Playlist {
+  id: string;
+  name: string;
+  songs: Song[];
+  createdAt: string;
 }
 
 interface FileItem {
@@ -29,11 +40,22 @@ export function MiniMusicPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(100);
+  const [shuffle, setShuffle] = useState(false);
+  const [repeat, setRepeat] = useState<"off" | "all" | "one">("off");
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<Song[]>([]);
   const [dbSongs, setDbSongs] = useState<Song[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<"title" | "artist" | "date">("title");
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [recentlyPlayed, setRecentlyPlayed] = useState<Song[]>([]);
+  const [queue, setQueue] = useState<Song[]>([]);
+  const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [activeTab, setActiveTab] = useState<"local" | "database">("database");
+  
   const audioRef = useRef<HTMLAudioElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -42,13 +64,16 @@ export function MiniMusicPlayer() {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateProgress = () => {
-      setProgress(audio.currentTime);
-    };
-
+    const updateProgress = () => setProgress(audio.currentTime);
     const updateDuration = () => {
-      if (audio.duration && !isNaN(audio.duration)) {
-        setDuration(audio.duration);
+      if (audio.duration && !isNaN(audio.duration)) setDuration(audio.duration);
+    };
+    const handleEnded = () => {
+      if (repeat === "one") {
+        audio.currentTime = 0;
+        audio.play();
+      } else {
+        nextSong();
       }
     };
 
@@ -56,20 +81,29 @@ export function MiniMusicPlayer() {
     audio.addEventListener("loadedmetadata", updateDuration);
     audio.addEventListener("durationchange", updateDuration);
     audio.addEventListener("canplay", updateDuration);
+    audio.addEventListener("ended", handleEnded);
 
     return () => {
       audio.removeEventListener("timeupdate", updateProgress);
       audio.removeEventListener("loadedmetadata", updateDuration);
       audio.removeEventListener("durationchange", updateDuration);
       audio.removeEventListener("canplay", updateDuration);
+      audio.removeEventListener("ended", handleEnded);
     };
-  }, []);
+  }, [repeat]);
 
+  // Reset on song change
   useEffect(() => {
-    // Reset progress and duration when song changes
     setProgress(0);
     setDuration(0);
   }, [currentIndex]);
+
+  // Volume control
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume / 100;
+    }
+  }, [volume]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -86,6 +120,41 @@ export function MiniMusicPlayer() {
   }, [isPlaying]);
 
   useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (songs.length > 0 && currentIndex !== null) {
+          setIsPlaying((prev) => !prev);
+        }
+      }
+      // Volume control: Arrow Up/Down
+      if (e.code === "ArrowUp") {
+        e.preventDefault();
+        setVolume((prev) => Math.min(100, prev + 5));
+      }
+      if (e.code === "ArrowDown") {
+        e.preventDefault();
+        setVolume((prev) => Math.max(0, prev - 5));
+      }
+      // Next: Right Arrow
+      if (e.code === "ArrowRight") {
+        e.preventDefault();
+        nextSong();
+      }
+      // Previous: Left Arrow
+      if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        prevSong();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [songs.length, currentIndex]);
+
+
+
+  useEffect(() => {
     fetchSongsFromDB();
   }, []);
 
@@ -96,30 +165,51 @@ export function MiniMusicPlayer() {
       
       if (!response.ok) {
         console.error("API error:", response.status);
+        toast.error("Failed to fetch songs", {
+          description: `Server returned status ${response.status}`,
+        });
         return;
       }
 
       const contentType = response.headers.get("content-type");
       if (!contentType?.includes("application/json")) {
         console.error("Invalid response type:", contentType);
+        toast.error("Invalid response", {
+          description: "Server returned invalid data format",
+        });
         return;
       }
 
       const data = await response.json();
+      console.log("Fetched songs:", data);
+      
       if (data.success && data.songs) {
+        // Filter out songs with invalid blob URLs
+        const validSongs = data.songs.filter((song: any) => {
+          return song.url && (song.url.startsWith('data:') || !song.url.startsWith('blob:'));
+        });
+        
+        console.log("Valid songs:", validSongs.length);
+        
         setDbSongs(
-          data.songs.map((song: any) => ({
+          validSongs.map((song: any) => ({
             id: song._id,
             title: song.title,
             url: song.url,
             artist: song.artist,
             album: song.album,
             albumArt: song.cover,
+            type: song.type || "audio",
           }))
         );
+      } else {
+        console.log("No songs in response or success is false");
       }
     } catch (error) {
       console.error("Error fetching songs:", error);
+      toast.error("Error fetching songs", {
+        description: "Check browser console for details",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -195,10 +285,59 @@ export function MiniMusicPlayer() {
     setUploadedFiles((prev) => prev.filter((song) => song.id !== id));
   };
 
+  const deleteFromDatabase = async (id: string, title: string) => {
+    try {
+      const response = await fetch("/api/songs", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setDbSongs((prev) => prev.filter((song) => song.id !== id));
+        toast.success("Song deleted", {
+          description: `"${title}" has been removed from database`,
+          action: {
+            label: "Undo",
+            onClick: () => console.log("Undo delete"),
+          },
+        });
+      } else {
+        toast.error("Failed to delete song", {
+          description: data.error || "Please try again",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting song:", error);
+      toast.error("Error deleting song", {
+        description: "An unexpected error occurred",
+      });
+    }
+  };
+
   const uploadToDatabase = async (song: Song) => {
     try {
       setIsUploading(true);
-      const response = await fetch("/api/songs", {
+      
+      // Convert blob URL to base64
+      let audioData = null;
+      if (song.url.startsWith('blob:')) {
+        try {
+          const response = await fetch(song.url);
+          const blob = await response.blob();
+          audioData = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch (err) {
+          console.error("Error converting blob to base64:", err);
+        }
+      }
+
+      const uploadResponse = await fetch("/api/songs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -206,27 +345,28 @@ export function MiniMusicPlayer() {
           artist: song.artist || "Unknown Artist",
           duration: duration || 0,
           url: song.url,
+          audioData: audioData,
           cover: song.albumArt || "",
         }),
       });
 
-      const contentType = response.headers.get("content-type");
+      const contentType = uploadResponse.headers.get("content-type");
       
       if (!contentType?.includes("application/json")) {
-        const text = await response.text();
+        const text = await uploadResponse.text();
         console.error("Invalid response type:", contentType, text);
-        toast.error("Server error", {
-          description: "MongoDB connection failed. Check server logs.",
+        toast.error("Upload Failed", {
+          description: "Server connection error. Please try again.",
         });
         return;
       }
 
-      const data = await response.json();
+      const data = await uploadResponse.json();
       
-      if (!response.ok) {
-        console.error("Upload error:", response.status, data);
-        toast.error("Failed to upload song", {
-          description: data.error || "Please try again later",
+      if (!uploadResponse.ok) {
+        console.error("Upload error:", uploadResponse.status, data);
+        toast.error("Upload Failed", {
+          description: data.error || "Server error. Please try again later",
         });
         return;
       }
@@ -234,16 +374,16 @@ export function MiniMusicPlayer() {
       if (data.success) {
         setUploadedFiles((prev) => prev.filter((s) => s.id !== song.id));
         await fetchSongsFromDB();
-        toast.success("Song uploaded successfully!", {
-          description: `"${song.title}" has been added to database`,
+        toast.success("Upload Complete", {
+          description: `"${song.title}" by ${song.artist || "Unknown Artist"} has been added to database`,
           action: {
-            label: "Undo",
-            onClick: () => console.log("Undo upload"),
+            label: "View",
+            onClick: () => setActiveTab("database"),
           },
         });
       } else {
-        toast.error(data.error || "Failed to upload song", {
-          description: "Please check your connection and try again",
+        toast.error("Upload Failed", {
+          description: data.error || "Please check your connection and try again",
         });
       }
     } catch (error) {
@@ -265,11 +405,22 @@ export function MiniMusicPlayer() {
 
   const nextSong = () => {
     if (songs.length === 0) return;
-    setCurrentIndex((prev) => {
-      const next = prev === null ? 0 : (prev + 1) % songs.length;
+    
+    if (repeat === "one") {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play();
+      }
+    } else if (shuffle) {
+      setCurrentIndex(Math.floor(Math.random() * songs.length));
       setIsPlaying(true);
-      return next;
-    });
+    } else {
+      setCurrentIndex((prev) => {
+        const next = prev === null ? 0 : (prev + 1) % songs.length;
+        setIsPlaying(true);
+        return next;
+      });
+    }
   };
 
   const prevSong = () => {
@@ -288,12 +439,6 @@ export function MiniMusicPlayer() {
     }
   };
 
-  const playSong = (index: number) => {
-    setCurrentIndex(index);
-    setIsPlaying(true);
-    setShowPlaylist(false);
-  };
-
   const removeSong = (index: number) => {
     setSongs((prev) => prev.filter((_, i) => i !== index));
     if (currentIndex === index) {
@@ -305,8 +450,63 @@ export function MiniMusicPlayer() {
     }
   };
 
+  const toggleFavorite = (id: string) => {
+    setSongs((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, isFavorite: !s.isFavorite } : s))
+    );
+    toast.success("Favorite updated");
+  };
+
+  const createPlaylist = () => {
+    if (!newPlaylistName.trim()) return;
+    const playlist: Playlist = {
+      id: Date.now().toString(),
+      name: newPlaylistName,
+      songs: [],
+      createdAt: new Date().toLocaleDateString(),
+    };
+    setPlaylists((prev) => [...prev, playlist]);
+    setNewPlaylistName("");
+    toast.success("Playlist created");
+  };
+
+  const addToQueue = (song: Song) => {
+    setQueue((prev) => [...prev, song]);
+    toast.success("Added to queue");
+  };
+
+  const playSong = (song: Song) => {
+    const index = songs.findIndex((s) => s.id === song.id);
+    if (index !== -1) {
+      setCurrentIndex(index);
+      setIsPlaying(true);
+      setRecentlyPlayed((prev) => [song, ...prev.filter((s) => s.id !== song.id)].slice(0, 10));
+      setSongs((prev) =>
+        prev.map((s) =>
+          s.id === song.id ? { ...s, playCount: (s.playCount || 0) + 1 } : s
+        )
+      );
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const filteredSongs = songs
+    .filter((s) => s.title.toLowerCase().includes(searchTerm.toLowerCase()) || s.artist?.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => {
+      if (sortBy === "title") return a.title.localeCompare(b.title);
+      if (sortBy === "artist") return (a.artist || "").localeCompare(b.artist || "");
+      return 0;
+    });
+
+  const favorites = songs.filter((s) => s.isFavorite);
+
   const currentSong = currentIndex !== null ? songs[currentIndex] : null;
-  const [activeTab, setActiveTab] = useState<"local" | "database">("database");
 
   return (
     <div className="flex gap-6 p-6">
@@ -361,9 +561,14 @@ export function MiniMusicPlayer() {
 
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {dbSongs.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-8">
-                    No songs in database. Upload from local files.
-                  </p>
+                  <div className="text-center py-8 space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      No valid songs in database.
+                    </p>
+                    <p className="text-xs text-amber-600">
+                      Note: Old songs with blob URLs cannot be played. Please re-upload them.
+                    </p>
+                  </div>
                 ) : (
                   dbSongs.map((song) => (
                     <div
@@ -394,6 +599,15 @@ export function MiniMusicPlayer() {
                           title="Add to Playlist"
                         >
                           <ListPlus className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 hover:text-red-500"
+                          onClick={() => deleteFromDatabase(song.id, song.title)}
+                          title="Delete from Database"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
@@ -511,16 +725,43 @@ export function MiniMusicPlayer() {
           onEnded={nextSong}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
+          crossOrigin="anonymous"
         />
         
         <div className="p-6 space-y-6">
           {/* Album Art */}
-          <div className="w-full aspect-square bg-gradient-to-br from-slate-300 to-slate-400 rounded-xl flex items-center justify-center">
+          <div className={`w-full aspect-square bg-gradient-to-br from-slate-300 to-slate-400 rounded-xl flex items-center justify-center overflow-hidden relative ${
+            isPlaying ? "animate-pulse" : ""
+          }`}>
             {currentSong?.albumArt ? (
-              <img src={currentSong.albumArt} alt="Album" className="w-full h-full object-cover rounded-xl" />
+              <img 
+                src={currentSong.albumArt} 
+                alt="Album" 
+                className={`w-full h-full object-cover rounded-xl transition-transform ${
+                  isPlaying ? "scale-105" : "scale-100"
+                }`}
+                style={{
+                  animation: isPlaying ? "spin 20s linear infinite" : "none",
+                }}
+              />
             ) : (
-              <Music className="w-16 h-16 text-slate-500" />
+              <div className="relative">
+                <Music className={`w-16 h-16 text-slate-500 transition-transform ${
+                  isPlaying ? "animate-bounce" : ""
+                }`} />
+                {isPlaying && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-20 h-20 border-2 border-slate-400 rounded-full animate-spin" />
+                  </div>
+                )}
+              </div>
             )}
+            <style>{`
+              @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
           </div>
 
           {/* Song Info */}
@@ -630,7 +871,7 @@ export function MiniMusicPlayer() {
                   className={`p-2 rounded cursor-pointer text-xs truncate ${
                     currentIndex === index ? "bg-black text-white" : "hover:bg-slate-100"
                   }`}
-                  onClick={() => playSong(index)}
+                  onClick={() => playSong(song)}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="flex-1 truncate">{song.title}</span>
