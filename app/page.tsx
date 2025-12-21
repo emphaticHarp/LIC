@@ -162,6 +162,7 @@ export default function LoginPage() {
 
         // Store user in localStorage for session management
         localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('userEmail', data.user.email);
         
         setApiSuccess("Login successful! Redirecting...");
         

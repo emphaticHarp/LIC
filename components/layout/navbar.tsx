@@ -21,6 +21,8 @@ interface NavbarProps {
   setNotifications: (notifications: any[]) => void;
   isClearingNotifications: boolean;
   setIsClearingNotifications: (loading: boolean) => void;
+  showDocumentsSidebar?: boolean;
+  setShowDocumentsSidebar?: (show: boolean) => void;
 }
 
 export default function Navbar({
@@ -31,7 +33,9 @@ export default function Navbar({
   notifications,
   setNotifications,
   isClearingNotifications,
-  setIsClearingNotifications
+  setIsClearingNotifications,
+  showDocumentsSidebar = false,
+  setShowDocumentsSidebar = () => {}
 }: NavbarProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -331,7 +335,7 @@ export default function Navbar({
                       Settings
                     </div>
                   </MenubarItem>
-                  <MenubarItem>
+                  <MenubarItem onClick={() => setShowDocumentsSidebar(true)}>
                     <div className="flex items-center">
                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -460,7 +464,13 @@ export default function Navbar({
                 >
                   Settings
                 </a>
-                <button className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50">
+                <button 
+                  onClick={() => {
+                    setShowDocumentsSidebar(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                >
                   Documents
                 </button>
                 <button

@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
+import mongoose from 'mongoose'
 
-const DocumentSchema = new mongoose.Schema(
+const documentSchema = new mongoose.Schema(
   {
     fileName: {
       type: String,
@@ -10,43 +10,32 @@ const DocumentSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    fileSize: Number,
-    fileData: {
-      type: Buffer,
-      required: true,
-    },
-    uploadedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    relatedId: String, // Customer ID, Loan ID, Policy ID, etc.
-    relatedType: {
-      type: String,
-      enum: ['CUSTOMER', 'LOAN', 'POLICY', 'CLAIM', 'KYC'],
+    fileSize: {
+      type: Number,
       required: true,
     },
     documentType: {
       type: String,
-      enum: ['PAN', 'AADHAAR', 'PASSPORT', 'DRIVING_LICENSE', 'BANK_STATEMENT', 'SALARY_SLIP', 'POLICY_DOCUMENT', 'CLAIM_PROOF', 'OTHER'],
-      required: true,
+      default: 'OTHER',
     },
-    description: String,
-    isVerified: {
-      type: Boolean,
-      default: false,
+    relatedType: {
+      type: String,
+      default: 'CUSTOMER',
     },
-    verifiedBy: mongoose.Schema.Types.ObjectId,
-    verificationDate: Date,
-    expiryDate: Date,
     createdAt: {
       type: Date,
       default: Date.now,
-      index: true,
+    },
+    uploadedBy: {
+      type: String,
+      default: 'user',
+    },
+    fileData: {
+      type: Buffer,
+      required: true,
     },
   },
-  { timestamps: true }
-);
+  { strict: false }
+)
 
-export const Document =
-  mongoose.models.Document || mongoose.model('Document', DocumentSchema);
+export const Document = mongoose.models.Document || mongoose.model('Document', documentSchema)

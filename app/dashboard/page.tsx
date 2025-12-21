@@ -27,6 +27,7 @@ import { InfrastructureMonitoring } from "@/components/features/infrastructure-m
 import { PaginatedTable } from "@/components/features/paginated-table";
 import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
 import { MiniMusicPlayer } from "@/components/features/mini-music-player";
+import DocumentsSidebar from "@/components/layout/documents-sidebar";
 
 function DashboardPageContent() {
   const router = useRouter();
@@ -37,6 +38,7 @@ function DashboardPageContent() {
   const [showProfileSidebar, setShowProfileSidebar] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [showDocumentsSidebar, setShowDocumentsSidebar] = useState(false);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [news, setNews] = useState<any[]>([]);
   const [isNewsLoading, setIsNewsLoading] = useState(true);
@@ -337,6 +339,14 @@ function DashboardPageContent() {
         setNotifications={setNotifications}
         isClearingNotifications={isClearingNotifications}
         setIsClearingNotifications={setIsClearingNotifications}
+        showDocumentsSidebar={showDocumentsSidebar}
+        setShowDocumentsSidebar={setShowDocumentsSidebar}
+      />
+
+      {/* Documents Sidebar */}
+      <DocumentsSidebar
+        isOpen={showDocumentsSidebar}
+        onClose={() => setShowDocumentsSidebar(false)}
       />
 
       {/* Dashboard Content with Sidebar */}
