@@ -10,6 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock, MapPin, Plus, X } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const AnalogClock = dynamic(() => import("./analog-clock"), { ssr: false });
 
 interface Holiday {
   date: string;
@@ -222,6 +225,9 @@ export function CalendarHolidays() {
 
   return (
     <div className="space-y-4">
+      {/* Analog Clock */}
+      <AnalogClock />
+
       {/* Current Date and Time */}
       <Card>
         <CardHeader className="pb-3">

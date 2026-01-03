@@ -16,6 +16,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import { BreadcrumbNav } from "@/components/features/breadcrumb-nav";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
+import { FormSkeleton } from "@/components/ui/skeleton";
 
 function SettingsPageContent() {
   const router = useRouter();
@@ -209,11 +211,15 @@ function SettingsPageContent() {
             {/* Breadcrumbs */}
             <BreadcrumbNav />
             
-            {/* Header */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings & Configuration</h1>
-              <p className="text-gray-600">Manage your system settings and preferences</p>
-            </div>
+            {isLoading ? (
+              <FormSkeleton />
+            ) : (
+              <>
+                {/* Header */}
+                <div className="mb-6">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings & Configuration</h1>
+                  <p className="text-gray-600">Manage your system settings and preferences</p>
+                </div>
 
             {/* Settings Navigation */}
             <div className="flex flex-wrap gap-2 mb-6">
@@ -914,6 +920,8 @@ function SettingsPageContent() {
                 </Card>
               )}
             </ScrollArea>
+              </>
+            )}
           </div>
         </div>
 

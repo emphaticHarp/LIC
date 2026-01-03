@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BreadcrumbNav } from "@/components/features/breadcrumb-nav";
 import { AgentToolsComponent } from "@/components/features/agent-tools";
+import { FormSkeleton } from "@/components/ui/skeleton";
 
 interface Agent {
   _id?: string;
@@ -21,7 +22,7 @@ export default function AgentManagementPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("existing");
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Agent>({
@@ -55,6 +56,8 @@ export default function AgentManagementPage() {
       }
     } catch (error) {
       console.error("Error fetching agents:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -166,8 +169,12 @@ export default function AgentManagementPage() {
         {/* Breadcrumbs */}
         <BreadcrumbNav />
         
-        {/* Add Agent Button */}
-        <div className="mb-6 flex justify-between items-center">
+        {isLoading ? (
+          <FormSkeleton />
+        ) : (
+          <>
+            {/* Add Agent Button */}
+            <div className="mb-6 flex justify-between items-center">
           <Button
             onClick={() => setShowForm(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -466,6 +473,8 @@ export default function AgentManagementPage() {
             </>
           )}
         </div>
+          </>
+        )}
       </div>
     </div>
   );

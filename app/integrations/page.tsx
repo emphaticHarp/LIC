@@ -15,12 +15,14 @@ import { Switch } from "@/components/ui/switch";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import { BreadcrumbNav } from "@/components/features/breadcrumb-nav";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
+import { FormSkeleton } from "@/components/ui/skeleton";
 
 function IntegrationsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isClearingNotifications, setIsClearingNotifications] = useState(false);
   const [showProfileSidebar, setShowProfileSidebar] = useState(false);
   const [notifications, setNotifications] = useState([
@@ -189,6 +191,7 @@ function IntegrationsPageContent() {
     if (emailParam) {
       setEmail(decodeURIComponent(emailParam));
     }
+    setIsLoading(false);
   }, [searchParams]);
 
   const handleLogout = async () => {
@@ -450,11 +453,15 @@ function IntegrationsPageContent() {
             {/* Breadcrumbs */}
             <BreadcrumbNav />
             
-            {/* Header */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Integrations</h1>
-              <p className="text-gray-600">Connect and manage third-party services for enhanced functionality</p>
-            </div>
+            {isLoading ? (
+              <FormSkeleton />
+            ) : (
+              <>
+                {/* Header */}
+                <div className="mb-6">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Integrations</h1>
+                  <p className="text-gray-600">Connect and manage third-party services for enhanced functionality</p>
+                </div>
 
             {/* Integration Categories */}
             <div className="flex flex-wrap gap-2 mb-6">
@@ -735,6 +742,8 @@ function IntegrationsPageContent() {
                 <Button className="mt-4">Save Webhook Configuration</Button>
               </CardContent>
             </Card>
+              </>
+            )}
           </div>
         </div>
 

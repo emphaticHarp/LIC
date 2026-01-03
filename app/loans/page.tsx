@@ -17,6 +17,8 @@ import { BreadcrumbNav } from "@/components/features/breadcrumb-nav";
 import { LAPApplicationForm } from "@/components/features/lap-application-form";
 import { LAPEligibilityCalculator } from "@/components/features/lap-eligibility-calculator";
 import { LAPManagement } from "@/components/features/lap-management";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
+import { TableSkeleton } from "@/components/ui/skeleton";
 
 interface Loan {
   _id: string;
@@ -266,11 +268,15 @@ export default function LoansPage() {
             {/* Breadcrumbs */}
             <BreadcrumbNav />
             
-            {/* Header */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Loan Management</h1>
-              <p className="text-gray-600">Manage all loan applications, KYC, and payments</p>
-            </div>
+            {isLoading ? (
+              <TableSkeleton rows={5} />
+            ) : (
+              <>
+                {/* Header */}
+                <div className="mb-6">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Loan Management</h1>
+                  <p className="text-gray-600">Manage all loan applications, KYC, and payments</p>
+                </div>
 
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -445,6 +451,8 @@ export default function LoansPage() {
                 <LAPManagement />
               </TabsContent>
             </Tabs>
+              </>
+            )}
           </div>
         </div>
 

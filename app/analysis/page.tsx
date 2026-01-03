@@ -15,12 +15,14 @@ import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import { BreadcrumbNav } from "@/components/features/breadcrumb-nav";
 import { PieChart } from "@/components/ui/pie-chart";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
+import { FormSkeleton } from "@/components/ui/skeleton";
 
 function AnalysisPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isClearingNotifications, setIsClearingNotifications] = useState(false);
   const [showProfileSidebar, setShowProfileSidebar] = useState(false);
   const [notifications, setNotifications] = useState([
@@ -75,6 +77,7 @@ function AnalysisPageContent() {
     if (emailParam) {
       setEmail(decodeURIComponent(emailParam));
     }
+    setIsLoading(false);
   }, [searchParams]);
 
   const handleLogout = async () => {
@@ -256,26 +259,30 @@ function AnalysisPageContent() {
         {/* Main Content */}
         <div className={`flex-1 transition-all duration-300 ${showProfileSidebar ? 'mr-80' : ''}`}>
           <div className="p-6">
-            {/* Breadcrumbs */}
-            <BreadcrumbNav />
-            
-            {/* Header */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Advanced Analysis</h1>
-              <p className="text-gray-600">Deep insights and predictive analytics for LIC operations</p>
-            </div>
+            {isLoading ? (
+              <FormSkeleton />
+            ) : (
+              <>
+                {/* Breadcrumbs */}
+                <BreadcrumbNav />
+                
+                {/* Header */}
+                <div className="mb-6">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Advanced Analysis</h1>
+                  <p className="text-gray-600">Deep insights and predictive analytics for LIC operations</p>
+                </div>
 
-            {/* Analysis Controls */}
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Analysis Configuration</CardTitle>
-                <CardDescription>Configure and run advanced analytics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="analysisType">Analysis Type</Label>
-                    <Select value={selectedAnalysis} onValueChange={setSelectedAnalysis}>
+                {/* Analysis Controls */}
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Analysis Configuration</CardTitle>
+                    <CardDescription>Configure and run advanced analytics</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="analysisType">Analysis Type</Label>
+                        <Select value={selectedAnalysis} onValueChange={setSelectedAnalysis}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select analysis type" />
                       </SelectTrigger>
@@ -611,6 +618,8 @@ function AnalysisPageContent() {
                   </div>
                 </CardContent>
               </Card>
+            )}
+              </>
             )}
           </div>
         </div>

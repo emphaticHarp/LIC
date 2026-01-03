@@ -157,7 +157,30 @@
 }
 
 /* Mobile Responsive Utilities */
+@layer base {
+  @keyframes scrollRTL {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+}
+
 @layer utilities {
+  .animate-scroll-slow {
+    animation: scrollRTL 20s linear infinite;
+  }
+
+  .animate-scroll-normal {
+    animation: scrollRTL 15s linear infinite;
+  }
+
+  .animate-scroll-fast {
+    animation: scrollRTL 10s linear infinite;
+  }
+
   /* Responsive text sizing */
   .responsive-text-xs {
     @apply text-xs sm:text-sm;

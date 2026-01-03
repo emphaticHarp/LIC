@@ -20,6 +20,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Navbar from "@/components/layout/navbar";
 import ProfileSidebar from "@/components/layout/profile-sidebar";
 import { BreadcrumbNav } from "@/components/features/breadcrumb-nav";
+import { DashboardSkeleton } from "@/components/features/dashboard-skeleton";
+import { FormSkeleton } from "@/components/ui/skeleton";
 
 function NewPolicyPageContent() {
   const router = useRouter();
@@ -521,7 +523,10 @@ function NewPolicyPageContent() {
               <p className="text-gray-600">Create a new insurance policy for your customer</p>
             </div>
 
-            <div className="space-y-6">
+            {isLoading ? (
+              <FormSkeleton />
+            ) : (
+              <div className="space-y-6">
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -1070,6 +1075,7 @@ function NewPolicyPageContent() {
                 </TabsContent>
               </Tabs>
             </div>
+            )}
           </div>
         </div>
 
